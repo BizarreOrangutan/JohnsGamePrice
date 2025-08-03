@@ -8,20 +8,20 @@ Multi-service application that aggregates game pricing information from various 
 
 ## 🏗 System Architecture (subject to change)
 
-![System Architecture](./docs/images/system-architecture.jpg)
+![System Architecture](./docs/Images/system-architecture.jpg)
 ![Interfaces](./docs/Design/interfaces.md)
 
 *Comprehensive microservices architecture showing the relationship between Game ID Fetcher, Price Fetcher services, and the React frontend.*
 
 ## 🗄 Database Design
 
-![Database Schema](./docs/images/database-schema.jpg)
+![Database Schema](./docs/Images/database-schema.jpg)
 
 *Entity-relationship diagram showing the data model for users, games, prices, and watchlists with proper foreign key relationships.*
 
 ## 📋 Use Cases
 
-![Use Case Diagram](./docs/images/use-case-diagram.jpg)
+![Use Case Diagram](./docs/Images/use-case-diagram.jpg)
 
 *Complete use case analysis covering user interactions, admin functions, and system processes for the game price comparison platform.*
 
