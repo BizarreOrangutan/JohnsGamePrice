@@ -9,7 +9,7 @@ Multi-service application that aggregates game pricing information from various 
 ## 🏗 System Architecture (subject to change)
 
 ![System Architecture](./docs/Images/system-architecture.jpg)
-![Interfaces](./docs/Design/interfaces.md)
+[Interface Specification](./docs/Design/interfaces.md)
 
 *Comprehensive microservices architecture showing the relationship between Game ID Fetcher, Price Fetcher services, and the React frontend.*
 
