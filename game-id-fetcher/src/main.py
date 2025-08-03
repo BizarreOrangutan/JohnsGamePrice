@@ -10,9 +10,6 @@ app = FastAPI()
 CLIENT_ID = os.getenv("CLIENT_ID")
 CLIENT_SECRET = os.getenv("CLIENT_SECRET") 
 
-print("CLIENT_ID:", CLIENT_ID)
-print("CLIENT_SECRET:", CLIENT_SECRET)
-
 igdb = IGDBClient(CLIENT_ID, CLIENT_SECRET)
 
 @app.get("/game-ids")
