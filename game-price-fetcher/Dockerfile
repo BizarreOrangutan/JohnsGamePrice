@@ -12,7 +12,7 @@ RUN pip install --no-cache-dir -r requirements-dev.txt
 COPY . .
 
 FROM base as test
-CMD ["pytest", "tests/"]
+CMD ["python", "-m", "pytest", "tests/", "-v"]
 
 FROM base as runtime
 EXPOSE 8000
