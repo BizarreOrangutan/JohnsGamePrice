@@ -1,48 +1,39 @@
 import js from '@eslint/js'
 import globals from 'globals'
-import reactHooks from 'eslint-plugin-react-hooks'
-import reactRefresh from 'eslint-plugin-react-refresh'
 import tseslint from 'typescript-eslint'
-import { globalIgnores } from 'eslint/config'
 import prettierPlugin from 'eslint-plugin-prettier';
 import prettierConfig from 'eslint-config-prettier';
 
 export default tseslint.config([
-  globalIgnores(['dist']),
   {
-    files: ['**/*.{ts,tsx}'],
+    ignores: ['dist/**', 'node_modules/**', '*.js', 'eslint.config.js'],
+  },
+  {
+    files: ['**/*.{ts,js}'],
     languageOptions: {
-      ecmaVersion: 2020,
+      ecmaVersion: 2022,
+      sourceType: 'module',
       parser: tseslint.parser,
       parserOptions: {
-        sourceType: 'module',
-        ecmaFeatures: {
-          jsx: true,
-        },
+        project: './tsconfig.json',
       },
-      globals: globals.browser,
+      globals: {
+        ...globals.node,
+        ...globals.es2022,
+      },
     },
     plugins: {
+      '@typescript-eslint': tseslint.plugin,
       prettier: prettierPlugin,
     },
     rules: {
-      ...prettierConfig.rules, 
+      ...js.configs.recommended.rules,
+      ...tseslint.configs.recommended.rules,
+      ...prettierConfig.rules,
       'prettier/prettier': 'error',
-    },
-    settings: {
-      react: {
-        version: 'detect',
-      },
-    },
-    extends: [
-      js.configs.recommended,
-      tseslint.configs.recommended,
-      reactHooks.configs['recommended-latest'],
-      reactRefresh.configs.vite,
-    ],
-    languageOptions: {
-      ecmaVersion: 2020,
-      globals: globals.browser,
+      'no-console': 'off',
+      'no-unused-vars': 'off',
+      '@typescript-eslint/no-unused-vars': 'off',
     },
   },
-])
+]);
