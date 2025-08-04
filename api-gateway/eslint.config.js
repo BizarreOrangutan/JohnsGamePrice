@@ -1,39 +1,53 @@
-import js from '@eslint/js'
-import globals from 'globals'
-import tseslint from 'typescript-eslint'
-import prettierPlugin from 'eslint-plugin-prettier';
-import prettierConfig from 'eslint-config-prettier';
+import js from '@eslint/js';
+import globals from 'globals';
+import tseslint from 'typescript-eslint';
 
-export default tseslint.config([
+export default tseslint.config(
+  { ignores: ['dist'] },
   {
-    ignores: ['dist/**', 'node_modules/**', '*.js', 'eslint.config.js'],
-  },
-  {
-    files: ['**/*.{ts,js}'],
+    extends: [js.configs.recommended, ...tseslint.configs.recommended],
+    files: ['**/*.{ts,tsx}'],
     languageOptions: {
       ecmaVersion: 2022,
-      sourceType: 'module',
-      parser: tseslint.parser,
-      parserOptions: {
-        project: './tsconfig.json',
-      },
-      globals: {
-        ...globals.node,
-        ...globals.es2022,
-      },
-    },
-    plugins: {
-      '@typescript-eslint': tseslint.plugin,
-      prettier: prettierPlugin,
+      globals: globals.node,
     },
     rules: {
-      ...js.configs.recommended.rules,
-      ...tseslint.configs.recommended.rules,
-      ...prettierConfig.rules,
-      'prettier/prettier': 'error',
-      'no-console': 'off',
-      'no-unused-vars': 'off',
+      '@typescript-eslint/no-unused-vars': ['error', { 
+        argsIgnorePattern: '^_',  // ✅ Allow unused vars starting with _
+        varsIgnorePattern: '^_'
+      }],
+      '@typescript-eslint/no-explicit-any': 'warn',
+    },
+  },
+  {
+    files: ['src/**/*.{ts,tsx}'],
+    languageOptions: {
+      parserOptions: {
+        project: './tsconfig.json',
+        tsconfigRootDir: import.meta.dirname,
+      },
+    },
+    rules: {
+      '@typescript-eslint/no-explicit-any': 'error',
+    },
+  },
+  {
+    files: ['tests/**/*.{ts,tsx}'],
+    languageOptions: {
+      globals: {
+        ...globals.node,
+        describe: 'readonly',
+        test: 'readonly',
+        expect: 'readonly',
+        beforeEach: 'readonly',
+        afterEach: 'readonly',
+        beforeAll: 'readonly',
+        afterAll: 'readonly',
+      },
+    },
+    rules: {
+      '@typescript-eslint/no-explicit-any': 'off',
       '@typescript-eslint/no-unused-vars': 'off',
     },
   },
-]);
+);
