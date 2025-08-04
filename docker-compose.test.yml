@@ -4,7 +4,7 @@ services:
   game-id-fetcher:
     build: 
       context: ./game-id-fetcher
-      target: test
+      target: runtime
     ports:
       - "8000:8000"
     environment:
@@ -15,12 +15,11 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
-    command: ["uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "8000"]
 
   game-price-fetcher:
     build: 
       context: ./game-price-fetcher
-      target: test
+      target: runtime
     ports:
       - "8001:8001"
     environment:
@@ -30,7 +29,6 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
-    command: ["uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "8001"]
 
   api-gateway:
     build: 
@@ -48,8 +46,7 @@ services:
       game-price-fetcher:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/api-docs"]
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
       interval: 10s
       timeout: 5s
       retries: 5
-    command: ["bun", "run", "start"]
