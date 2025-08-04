@@ -16,11 +16,9 @@ RUN pip install --no-cache-dir pytest pytest-cov pytest-asyncio httpx
 
 COPY . .
 
-# ✅ Add test stage
 FROM base as test
 CMD ["python", "-m", "pytest", "tests/", "-v"]
 
-# ✅ Production stage
 FROM base as runtime
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
