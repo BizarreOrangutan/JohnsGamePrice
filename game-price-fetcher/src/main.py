@@ -10,6 +10,11 @@ steam_fetcher = SteamPriceFetcher()
 def get_steam_price(game_id: str, currency: str = "GBP"):
     return steam_fetcher.fetch(game_id, currency)
 
+# Add this route to your FastAPI app
+@app.get("/health")
+async def health_check():
+    return {"status": "healthy", "service": "game-price-fetcher"}
+
 if __name__ == "__main__":
     port = int(os.getenv("PORT", 8001)) 
     uvicorn.run(

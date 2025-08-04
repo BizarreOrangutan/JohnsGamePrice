@@ -2,9 +2,12 @@ import express from 'express';
 
 const router = express.Router();
 
-// Define the expected response type from game-id-fetcher
+// ✅ Fix the interface - remove any
 interface GameIdServiceResponse {
-  game_ids?: any[];
+  game_ids?: Array<{
+    id: number;
+    name: string;
+  }>;
   error?: string;
 }
 
@@ -47,9 +50,14 @@ router.get('/search', async (req: express.Request, res: express.Response) => {
     if (!response.ok) {
       throw new Error(`Game service error: ${response.status}`);
     }
-
-    const data = await response.json() as GameIdServiceResponse;
-
+    const unknownData: unknown = await response.json();
+    
+    if (typeof unknownData !== 'object' || unknownData === null) {
+      throw new Error('Invalid response format from game service');
+    }
+    
+    const data = unknownData as GameIdServiceResponse;
+    
     res.status(200).json({
       query,
       results: data.game_ids || [],

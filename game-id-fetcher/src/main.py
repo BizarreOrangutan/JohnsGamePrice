@@ -19,3 +19,8 @@ async def get_game_ids(query: str = Query(..., description="Search query for gam
         return {"game_ids": game_ids}
     except Exception as e:
         return {"error": str(e)}
+
+# Add this route to your FastAPI app
+@app.get("/health")
+async def health_check():
+    return {"status": "healthy", "service": "game-id-fetcher"}

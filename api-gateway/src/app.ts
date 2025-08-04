@@ -47,6 +47,15 @@ export function createApp() {
   // Routes
   app.use('/api/games', gameRoutes);
 
+  // Health check route
+  app.get('/health', (req: express.Request, res: express.Response) => {
+    res.status(200).json({
+      status: 'healthy',
+      service: 'api-gateway',
+      timestamp: new Date().toISOString(),
+    });
+  });
+
   // 404 handler
   app.use(/(.*)/, (req: express.Request, res: express.Response) => {
     res.status(404).json({
