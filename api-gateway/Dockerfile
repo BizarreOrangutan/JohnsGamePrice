@@ -24,20 +24,22 @@ RUN bun run build
 FROM base AS dev
 COPY --from=install-with-dev /usr/src/app/node_modules ./node_modules
 COPY . .
-RUN chown -R bun:bun /usr/src/app/node_modules
+RUN chown -R bun:bun /usr/src/app
 USER bun
-# Use environment variable for port (defaults to 3000)
-ENTRYPOINT ["sh", "-c", "bun run dockerdev --host 0.0.0.0 --port ${PORT:-3000}"]
+EXPOSE 8080
+ENTRYPOINT ["bun", "run", "dev"]
 
 # Production runtime target
 FROM base AS runtime
 COPY --from=install /usr/src/app/node_modules ./node_modules
-COPY --from=build /usr/src/app/dist ./dist
-COPY package.json ./
+COPY . .
 
 # Create non-root user for security
 RUN chown -R bun:bun /usr/src/app
 USER bun
 
-# Use environment variable for port (defaults to 3000)
-ENTRYPOINT ["sh", "-c", "bun run start --host 0.0.0.0 --port ${PORT:-3000}"]
+# Expose API Gateway port
+EXPOSE 8080
+
+# Run the API Gateway
+ENTRYPOINT ["bun", "run", "start"]
