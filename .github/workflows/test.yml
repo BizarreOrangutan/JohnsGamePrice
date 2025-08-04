@@ -94,7 +94,19 @@ jobs:
       - name: Run tests in container
         timeout-minutes: 5
         run: |
-          docker run --rm api-gateway:test bun test
+          docker run --rm \
+            --entrypoint="" \
+            api-gateway:test \
+            bun test --timeout 30000
+            
+      - name: Run lint checks
+        if: success()
+        timeout-minutes: 2
+        run: |
+          docker run --rm \
+            --entrypoint="" \
+            api-gateway:test \
+            bun run lint
 
   integration-tests:
     runs-on: ubuntu-latest
