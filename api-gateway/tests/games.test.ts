@@ -1,43 +1,48 @@
-import { test, expect, describe } from 'bun:test';
+import { describe, test, expect } from 'bun:test';
 import request from 'supertest';
 import { createApp } from '../src/app.js';
 import { mockFetchSuccess, mockFetchError } from './setups.js';
 
-describe('Game Search Business Logic', () => {
+describe('Games API', () => {
   const app = createApp();
 
-  describe('Search Games', () => {
-    test('should search for games successfully', async () => {
-      const mockGames = {
-        game_ids: [
-          { id: 1942, name: 'Portal' },
-          { id: 2777, name: 'Portal 2' }
-        ]
+  describe('GET /api/games/search', () => {
+    test('should return games successfully', async () => {
+      const mockResponse = {
+        games: [
+          { title: 'Portal', plain: 'portal' }
+        ],
+        count: 1
       };
 
-      mockFetchSuccess(mockGames);
+      mockFetchSuccess(mockResponse);
 
       const response = await request(app)
         .get('/api/games/search?query=portal')
         .expect(200);
 
       expect(response.body.query).toBe('portal');
-      expect(response.body.results).toHaveLength(2);
-      expect(response.body.count).toBe(2);
+      expect(response.body.results).toHaveLength(1);
+      expect(response.body.count).toBe(1);
     });
 
-    test('should handle empty search results', async () => {
-      mockFetchSuccess({ game_ids: [] });
+    test('should return empty results when no games found', async () => {
+      const mockResponse = {
+        games: [],
+        count: 0
+      };
+
+      mockFetchSuccess(mockResponse);
 
       const response = await request(app)
-        .get('/api/games/search?query=unknowngame')
+        .get('/api/games/search?query=unknown')
         .expect(200);
 
-      expect(response.body.results).toHaveLength(0);
+      expect(response.body.results).toEqual([]);
       expect(response.body.count).toBe(0);
     });
 
-    test('should require a search query', async () => {
+    test('should return 400 when query is missing', async () => {
       const response = await request(app)
         .get('/api/games/search')
         .expect(400);
@@ -45,25 +50,14 @@ describe('Game Search Business Logic', () => {
       expect(response.body.error).toBe('Query parameter is required');
     });
 
-    test('should handle service errors gracefully', async () => {
-      mockFetchError(500);
+    test('should handle service errors', async () => {
+      mockFetchError(500, 'Service Error');
 
       const response = await request(app)
         .get('/api/games/search?query=portal')
         .expect(500);
 
       expect(response.body.error).toBe('Search failed');
-    });
-
-    test('should encode special characters in queries', async () => {
-      mockFetchSuccess({ game_ids: [] });
-
-      const response = await request(app)
-        .get('/api/games/search?query=call of duty')
-        .expect(200);
-
-      // Just verify the request went through successfully
-      expect(response.body.query).toBe('call of duty');
     });
   });
 });

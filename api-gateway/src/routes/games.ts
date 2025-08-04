@@ -2,12 +2,14 @@ import express from 'express';
 
 const router = express.Router();
 
-// ✅ Fix the interface - remove any
+// ✅ Updated interface to match game-id-fetcher response
 interface GameIdServiceResponse {
-  game_ids?: Array<{
-    id: number;
-    name: string;
+  games?: Array<{
+    title?: string;
+    plain?: string;
   }>;
+  count?: number;
+  message?: string;
   error?: string;
 }
 
@@ -45,23 +47,18 @@ router.get('/search', async (req: express.Request, res: express.Response) => {
 
     const gameIdServiceUrl = process.env.GAME_ID_SERVICE_URL || 'http://game-id-fetcher:8000';
     
-    const response = await fetch(`${gameIdServiceUrl}/game-ids?query=${encodeURIComponent(query as string)}`);
+    const response = await fetch(`${gameIdServiceUrl}/game-ids?title=${encodeURIComponent(query as string)}&result_num=20`);
     
     if (!response.ok) {
       throw new Error(`Game service error: ${response.status}`);
     }
-    const unknownData: unknown = await response.json();
     
-    if (typeof unknownData !== 'object' || unknownData === null) {
-      throw new Error('Invalid response format from game service');
-    }
-    
-    const data = unknownData as GameIdServiceResponse;
+    const data = await response.json() as GameIdServiceResponse;
     
     res.status(200).json({
       query,
-      results: data.game_ids || [],
-      count: data.game_ids?.length || 0,
+      results: data.games || [],
+      count: data.count || 0,
       timestamp: new Date().toISOString(),
     });
 
