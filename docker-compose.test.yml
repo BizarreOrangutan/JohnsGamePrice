@@ -1,0 +1,29 @@
+version: '3.8'
+
+services:
+  game-id-fetcher:
+    build: 
+      context: ./game-id-fetcher
+      target: test
+    ports:
+      - "8000:8000"
+    environment:
+      - CLIENT_ID=${CLIENT_ID}
+      - CLIENT_SECRET=${CLIENT_SECRET}
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  game-price-fetcher:
+    build: 
+      context: ./game-price-fetcher
+      target: test
+    ports:
+      - "8001:8001"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8001/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
