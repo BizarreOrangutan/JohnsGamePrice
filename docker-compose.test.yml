@@ -14,6 +14,8 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    networks:
+      - test-network
 
   api-gateway:
     build: 
@@ -32,3 +34,9 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    networks:
+      - test-network
+
+networks:
+  test-network:
+    driver: bridge
