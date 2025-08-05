@@ -16,8 +16,10 @@ FROM base AS prerelease
 COPY --from=install /usr/src/app/node_modules ./node_modules
 COPY . .
 
-# Build the application
+# Build the application with API URL
 FROM prerelease AS build
+# Set API URL for production build
+ENV VITE_API_URL=""
 RUN bun run build
 
 # Development target

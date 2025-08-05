@@ -1,9 +1,7 @@
-version: '3.8'
-
 services:
-  game-id-fetcher:
+  price-fetcher:
     build: 
-      context: ./game-id-fetcher
+      context: ./price-fetcher
       target: runtime
     ports:
       - "8000:8000"
@@ -14,38 +12,30 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
-
-  game-price-fetcher:
-    build: 
-      context: ./game-price-fetcher
-      target: runtime
-    ports:
-      - "8001:8001"
-    environment:
-      - PORT=8001
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8001/health"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
+    networks:
+      - test-network
 
   api-gateway:
     build: 
       context: ./api-gateway
-      target: dev
+      target: runtime
     ports:
       - "8080:8080"
     environment:
-      - GAME_ID_SERVICE_URL=http://game-id-fetcher:8000
-      - PRICE_SERVICE_URL=http://game-price-fetcher:8001
+      - PRICE_FETCHER_SERVICE_URL=http://price-fetcher:8000
       - NODE_ENV=production
     depends_on:
-      game-id-fetcher:
-        condition: service_healthy
-      game-price-fetcher:
+      price-fetcher:
         condition: service_healthy
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
+      interval: 30s      # Check every 30 seconds
+      timeout: 10s       # 10 second timeout
+      retries: 3         # Only 3 retries
+      start_period: 90s  # Wait 90 seconds before first check
+    networks:
+      - test-network
+
+networks:
+  test-network:
+    driver: bridge

@@ -11,7 +11,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 app = FastAPI(
-    title="Game ID Fetcher API",
+    title="Game Price Fetcher API",
     description="API to fetch game IDs from various stores",
     version="1.0.0"
 )
@@ -95,7 +95,7 @@ async def health_check():
 
         return {
             "status": "healthy", 
-            "service": "game-id-fetcher",
+            "service": "price-fetcher",
             "api_key_configured": bool(API_KEY)
         }
     except Exception as e:
