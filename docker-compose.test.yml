@@ -18,7 +18,7 @@ services:
   api-gateway:
     build: 
       context: ./api-gateway
-      target: dev
+      target: runtime
     ports:
       - "8080:8080"
     environment:
@@ -29,9 +29,10 @@ services:
         condition: service_healthy
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
+      interval: 30s      # Check every 30 seconds
+      timeout: 10s       # 10 second timeout
+      retries: 3         # Only 3 retries
+      start_period: 90s  # Wait 90 seconds before first check
     networks:
       - test-network
 

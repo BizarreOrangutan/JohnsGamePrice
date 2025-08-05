@@ -141,32 +141,32 @@ jobs:
           docker compose -f docker-compose.test.yml up -d
           
       - name: Wait for services to be ready
-        timeout-minutes: 5
+        timeout-minutes: 8
         run: |
           echo "Waiting for services to start..."
-          sleep 30
+          sleep 60  # Give API gateway time to fully initialize
           
           # Check if containers are running
           docker compose -f docker-compose.test.yml ps
           
-          # Wait for services with retries
+          # Wait for services with appropriate timing
           echo "Testing service connectivity..."
-          for i in {1..24}; do
+          for i in {1..12}; do
             if curl -s http://localhost:8000/health > /dev/null 2>&1; then
               echo "✓ price-fetcher is responding"
               break
             fi
-            echo "Waiting for price-fetcher... ($i/24)"
+            echo "Waiting for price-fetcher... ($i/12)"
             sleep 5
           done
           
-          for i in {1..24}; do
+          for i in {1..12}; do
             if curl -s http://localhost:8080/health > /dev/null 2>&1; then
               echo "✓ api-gateway is responding"
               break
             fi
-            echo "Waiting for api-gateway... ($i/24)"
-            sleep 5
+            echo "Waiting for api-gateway... ($i/12)"
+            sleep 10  # Longer wait between checks for API gateway
           done
           
       - name: Show service status on failure
