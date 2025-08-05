@@ -46,7 +46,7 @@ router.get('/search', async (req: express.Request, res: express.Response) => {
 
     const priceFetcherServiceUrl = process.env.PRICE_FETCHER_SERVICE_URL || 'http://price-fetcher:8000';
     
-    const response = await fetch(`${priceFetcherServiceUrl}/game-ids?title=${encodeURIComponent(query as string)}&result_num=20`);
+    const response = await fetch(`${priceFetcherServiceUrl}/game-ids?title=${encodeURIComponent(query as string)}&result_num=10`);
     
     if (!response.ok) {
       throw new Error(`Price fetcher service error: ${response.status}`);

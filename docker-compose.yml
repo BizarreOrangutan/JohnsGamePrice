@@ -36,6 +36,9 @@ services:
       - "3000:3000" 
     environment:
       - PORT=3000
+      - VITE_API_URL=http://localhost:8080 
+    depends_on:
+      - api-gateway
     networks:
       - john-network
 
