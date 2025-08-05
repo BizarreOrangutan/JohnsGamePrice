@@ -134,7 +134,7 @@ jobs:
         
       - name: Create test environment file
         run: |
-          echo "API_KEY=test_api_key" > .env
+          echo "API_KEY=${{ secrets.ISTHEREANYDEAL_API_KEY || 'test_api_key' }}" > .env
           
       - name: Start services with Docker Compose
         run: |
@@ -202,13 +202,17 @@ jobs:
             exit 1
           fi
           
-          # Test games search endpoint
+          # Test games search endpoint (only if real API key is available)
           echo "Testing games search endpoint..."
-          if curl -f -s "http://localhost:8080/api/games/search?query=test" > /dev/null; then
-            echo "✅ Games search endpoint passed"
+          if [ "${{ secrets.ISTHEREANYDEAL_API_KEY }}" != "" ]; then
+            if curl -f -s "http://localhost:8080/api/games/search?query=test" > /dev/null; then
+              echo "✅ Games search endpoint passed"
+            else
+              echo "❌ Games search endpoint failed"
+              exit 1
+            fi
           else
-            echo "❌ Games search endpoint failed"
-            exit 1
+            echo "ℹ️  Skipping games search test (no API key configured)"
           fi
           
           echo "🎉 All endpoint tests passed!"
