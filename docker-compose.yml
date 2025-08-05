@@ -1,13 +1,26 @@
 services:
-  price-fetcher:
+  game-id-fetcher:
     build: 
-      context: ./price-fetcher
+      context: ./game-id-fetcher
       target: runtime
     environment:
-      - API_KEY=${API_KEY}
+      - CLIENT_ID=${CLIENT_ID}
+      - CLIENT_SECRET=${CLIENT_SECRET}
       - PORT=8000
     ports:
       - "8000:8000" 
+    restart: unless-stopped
+    networks:
+      - john-network
+
+  game-price-fetcher:
+    build: 
+      context: ./game-price-fetcher
+      target: runtime
+    environment:
+      - PORT=8001
+    ports:
+      - "8001:8001" 
     restart: unless-stopped
     networks:
       - john-network
@@ -20,10 +33,12 @@ services:
       - "8080:8080"
     environment:
       - PORT=8080
-      - PRICE_FETCHER_SERVICE_URL=http://price-fetcher:8000
+      - GAME_ID_SERVICE_URL=http://game-id-fetcher:8000
+      - PRICE_SERVICE_URL=http://game-price-fetcher:8001
       - LOG_LEVEL=info
     depends_on:
-      - price-fetcher
+      - game-id-fetcher
+      - game-price-fetcher
     restart: unless-stopped
     networks:
       - john-network

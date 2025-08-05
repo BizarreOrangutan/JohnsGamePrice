@@ -17,7 +17,8 @@ jobs:
   changes:
     runs-on: ubuntu-latest
     outputs:
-      price-fetcher: ${{ steps.changes.outputs.price-fetcher }}
+      game-id-fetcher: ${{ steps.changes.outputs.game-id-fetcher }}
+      game-price-fetcher: ${{ steps.changes.outputs.game-price-fetcher }}
       api-gateway: ${{ steps.changes.outputs.api-gateway }}
       run-all: ${{ inputs.run_all_tests == true || contains(github.event.head_commit.message, '[test all]') }}
     steps:
@@ -26,30 +27,51 @@ jobs:
         id: changes
         with:
           filters: |
-            price-fetcher:
-              - 'price-fetcher/**'
+            game-id-fetcher:
+              - 'game-id-fetcher/**'
+            game-price-fetcher:
+              - 'game-price-fetcher/**'
             api-gateway:
               - 'api-gateway/**'
 
-  test-price-fetcher:
+  test-game-id-fetcher:
     runs-on: ubuntu-latest
     needs: changes
-    if: ${{ needs.changes.outputs.price-fetcher == 'true' || needs.changes.outputs.run-all == 'true' }}
+    if: ${{ needs.changes.outputs.game-id-fetcher == 'true' || needs.changes.outputs.run-all == 'true' }}
     steps:
       - uses: actions/checkout@v4
       
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
         
-      - name: Build Price Fetcher image
+      - name: Build Game ID Fetcher image
         run: |
-          docker build --target test -t price-fetcher:test ./price-fetcher
+          docker build --target test -t game-id-fetcher:test ./game-id-fetcher
           
       - name: Run tests in container
         run: |
           docker run --rm \
             -e API_KEY=test_api_key \
-            price-fetcher:test
+            game-id-fetcher:test
+
+  test-game-price-fetcher:
+    runs-on: ubuntu-latest
+    needs: changes
+    if: ${{ needs.changes.outputs.game-price-fetcher == 'true' || needs.changes.outputs.run-all == 'true' }}
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+        
+      - name: Build Game Price Fetcher image
+        run: |
+          docker build --target test -t game-price-fetcher:test ./game-price-fetcher
+          
+      - name: Run tests in container
+        run: |
+          docker run --rm \
+            game-price-fetcher:test
 
   test-api-gateway:
     runs-on: ubuntu-latest
@@ -85,8 +107,8 @@ jobs:
 
   integration-tests:
     runs-on: ubuntu-latest
-    needs: [changes, test-price-fetcher, test-api-gateway]
-    if: always() && (needs.changes.outputs.price-fetcher == 'true' || needs.changes.outputs.api-gateway == 'true' || needs.changes.outputs.run-all == 'true')
+    needs: [changes, test-game-id-fetcher, test-game-price-fetcher, test-api-gateway]
+    if: always() && (needs.changes.outputs.game-id-fetcher == 'true' || needs.changes.outputs.game-price-fetcher == 'true' || needs.changes.outputs.api-gateway == 'true' || needs.changes.outputs.run-all == 'true')
     steps:
       - uses: actions/checkout@v4
       
@@ -113,10 +135,19 @@ jobs:
           echo "Testing basic connectivity..."
           for i in {1..12}; do
             if curl -s http://localhost:8000/health > /dev/null 2>&1; then
-              echo "✓ price-fetcher is responding"
+              echo "✓ game-id-fetcher is responding"
               break
             fi
-            echo "Waiting for price-fetcher... ($i/12)"
+            echo "Waiting for game-id-fetcher... ($i/12)"
+            sleep 5
+          done
+          
+          for i in {1..12}; do
+            if curl -s http://localhost:8001/health > /dev/null 2>&1; then
+              echo "✓ game-price-fetcher is responding"
+              break
+            fi
+            echo "Waiting for game-price-fetcher... ($i/12)"
             sleep 5
           done
           
@@ -134,8 +165,10 @@ jobs:
         run: |
           echo "=== Docker Compose Services ==="
           docker compose -f docker-compose.test.yml ps
-          echo "=== Price Fetcher logs ==="
-          docker compose -f docker-compose.test.yml logs price-fetcher
+          echo "=== Game ID Fetcher logs ==="
+          docker compose -f docker-compose.test.yml logs game-id-fetcher
+          echo "=== Game Price Fetcher logs ==="
+          docker compose -f docker-compose.test.yml logs game-price-fetcher
           echo "=== API Gateway logs ==="
           docker compose -f docker-compose.test.yml logs api-gateway
           
@@ -145,11 +178,16 @@ jobs:
           
           # Test health endpoints
           curl -f http://localhost:8000/health
+          curl -f http://localhost:8001/health  
           curl -f http://localhost:8080/health
           
-          # Test Price Fetcher endpoint
+          # Test Game ID Fetcher endpoint
           response=$(curl -s "http://localhost:8000/game-ids?title=portal&result_num=5")
-          echo "Price Fetcher response: $response"
+          echo "Game ID response: $response"
+          
+          # Test Game Price Fetcher endpoint
+          price_response=$(curl -s "http://localhost:8001/price/steam?game_id=620&currency=USD")
+          echo "Price response: $price_response"
           
           # Test API Gateway proxy
           gateway_response=$(curl -s "http://localhost:8080/api/games/search?query=portal")
@@ -168,5 +206,6 @@ jobs:
           echo "run_all_tests input: ${{ inputs.run_all_tests }}"
           echo "commit message contains [test all]: ${{ contains(github.event.head_commit.message, '[test all]') }}"
           echo "run-all output: ${{ needs.changes.outputs.run-all }}"
-          echo "price-fetcher: ${{ needs.changes.outputs.price-fetcher }}"
+          echo "game-id-fetcher: ${{ needs.changes.outputs.game-id-fetcher }}"
+          echo "game-price-fetcher: ${{ needs.changes.outputs.game-price-fetcher }}"
           echo "api-gateway: ${{ needs.changes.outputs.api-gateway }}"

@@ -11,7 +11,7 @@ Multi-service application that aggregates game pricing information from various 
 ![System Architecture](./docs/Images/system-architecture.jpg)
 [Interface Specification](./docs/Design/architecture-interfaces.odt)
 
-*Comprehensive microservices architecture showing the relationship between Price Fetcher service and the React frontend.*
+*Comprehensive microservices architecture showing the relationship between Game ID Fetcher, Price Fetcher services, and the React frontend.*
 
 ## 🗄 Database Design
 
@@ -28,10 +28,12 @@ Multi-service application that aggregates game pricing information from various 
 
 ## 🐍 Python Backend Services
 
-### **Price Fetcher Service** (`price-fetcher/`)
-- **ITAD API Integration**: Game metadata retrieval and price comparison
+### **Game ID Fetcher Service** (`game-id-fetcher/`)
+- **IGDB API Integration**: Game metadata retrieval with OAuth2 authentication
 - **FastAPI Framework**: High-performance async web service
 - **Comprehensive Testing**: Unit tests with mocked external dependencies
+
+### **Game Price Fetcher Service** (`game-price-fetcher/`)
 - **Template Method Pattern**: Extensible architecture for multiple stores
 - **Abstract Base Classes**: Clean interface design for price fetchers
 - **Multi-Store Support**: Currently Steam with scalable architecture
@@ -121,21 +123,20 @@ const useGamePrices = (gameId: string): {
 
 ```
 JohnsGamePrice/
-├── price-fetcher/                # Python Microservice
+├── game-id-fetcher/              # Python Microservice
 │   ├── src/
-│   │   ├── itad_client.py        # ITAD API integration
+│   │   ├── igdb_client.py        # IGDB API integration
+│   │   └── main.py               # FastAPI application
+│   ├── tests/                    # Comprehensive unit tests
+│   └── Dockerfile                # Multi-stage container build
+│
+├── game-price-fetcher/           # Python Microservice  
+│   ├── src/
 │   │   ├── templates/
 │   │   │   └── price_fetcher.py  # Abstract base class
 │   │   ├── fetchers/
 │   │   │   └── steam.py          # Steam price fetcher
 │   │   └── main.py               # FastAPI application
-│   ├── tests/                    # Comprehensive unit tests
-│   └── Dockerfile                # Multi-stage container build
-│
-├── api-gateway/                  # API Gateway Service
-│   ├── src/
-│   │   ├── routes/               # API route handlers
-│   │   └── app.ts                # Express application
 │   ├── tests/                    # Unit tests with mocking
 │   └── Dockerfile                # Production-ready container
 │
@@ -152,15 +153,13 @@ JohnsGamePrice/
 
 ## 📚 API Endpoints
 
-### **Price Fetcher Service**
-- **Search Games**: `GET /game-ids?title={game_title}&result_num={count}`
-- **Steam Prices**: `GET /price/steam?game_id={id}&currency={currency}`
+### **Game ID Service**
+- **Search Games**: `GET /game-ids?name={game_name}`
 - **Interactive Docs**: Available at `/docs` endpoint
-- **Supported Currencies**: USD, GBP, EUR, and more
 
-### **API Gateway**
-- **Game Search**: `GET /api/games/search?query={game_name}`
-- **Health Check**: `GET /health`
+### **Price Fetcher Service**
+- **Steam Prices**: `GET /price/steam?game_id={id}&currency={currency}`
+- **Supported Currencies**: USD, GBP, EUR, and more
 
 ## 🧪 Testing Strategy
 

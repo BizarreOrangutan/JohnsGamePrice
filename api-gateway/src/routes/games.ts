@@ -2,7 +2,8 @@ import express from 'express';
 
 const router = express.Router();
 
-interface PriceFetcherServiceResponse {
+// ✅ Updated interface to match game-id-fetcher response
+interface GameIdServiceResponse {
   games?: Array<{
     title?: string;
     plain?: string;
@@ -44,15 +45,15 @@ router.get('/search', async (req: express.Request, res: express.Response) => {
 
     console.log(`Searching for: "${query}"`);
 
-    const priceFetcherServiceUrl = process.env.PRICE_FETCHER_SERVICE_URL || 'http://price-fetcher:8000';
+    const gameIdServiceUrl = process.env.GAME_ID_SERVICE_URL || 'http://game-id-fetcher:8000';
     
-    const response = await fetch(`${priceFetcherServiceUrl}/game-ids?title=${encodeURIComponent(query as string)}&result_num=20`);
+    const response = await fetch(`${gameIdServiceUrl}/game-ids?title=${encodeURIComponent(query as string)}&result_num=20`);
     
     if (!response.ok) {
-      throw new Error(`Price fetcher service error: ${response.status}`);
+      throw new Error(`Game service error: ${response.status}`);
     }
     
-    const data = await response.json() as PriceFetcherServiceResponse;
+    const data = await response.json() as GameIdServiceResponse;
     
     res.status(200).json({
       query,
