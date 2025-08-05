@@ -1,3 +1,4 @@
+// @ts-ignore
 import { describe, test, expect, beforeEach, afterEach } from 'bun:test';
 import { gameSearchService } from '../../../../src/modules/core/utils/gameSearchService';
 
@@ -6,11 +7,11 @@ let originalFetch: any;
 
 describe('gameSearchService', () => {
   beforeEach(() => {
-    originalFetch = global.fetch;
+    originalFetch = (globalThis as any).fetch;
   });
 
   afterEach(() => {
-    global.fetch = originalFetch;
+    (globalThis as any).fetch = originalFetch;
   });
 
   test('should return empty array for empty query', async () => {
@@ -26,7 +27,7 @@ describe('gameSearchService', () => {
   test('should call API with query as provided (including whitespace)', async () => {
     let capturedUrl = '';
     
-    global.fetch = async (url: string) => {
+    (globalThis as any).fetch = async (url: string) => {
       capturedUrl = url;
       return {
         ok: true,
@@ -66,7 +67,7 @@ describe('gameSearchService', () => {
       timestamp: '2025-01-01T12:00:00Z'
     };
 
-    global.fetch = async () => ({
+    (globalThis as any).fetch = async () => ({
       ok: true,
       status: 200,
       headers: {
@@ -80,7 +81,7 @@ describe('gameSearchService', () => {
   });
 
   test('should handle HTTP errors', async () => {
-    global.fetch = async () => ({
+    (globalThis as any).fetch = async () => ({
       ok: false,
       status: 500,
       statusText: 'Internal Server Error'
@@ -92,7 +93,7 @@ describe('gameSearchService', () => {
   });
 
   test('should handle non-JSON responses', async () => {
-    global.fetch = async () => ({
+    (globalThis as any).fetch = async () => ({
       ok: true,
       status: 200,
       headers: {
@@ -107,7 +108,7 @@ describe('gameSearchService', () => {
   });
 
   test('should handle network errors', async () => {
-    global.fetch = async () => {
+    (globalThis as any).fetch = async () => {
       throw new Error('Network error');
     };
 
@@ -119,7 +120,7 @@ describe('gameSearchService', () => {
   test('should encode query parameters correctly', async () => {
     let capturedUrl = '';
     
-    global.fetch = async (url: string) => {
+    (globalThis as any).fetch = async (url: string) => {
       capturedUrl = url;
       return {
         ok: true,
@@ -139,7 +140,7 @@ describe('gameSearchService', () => {
   });
 
   test('should handle empty results from API', async () => {
-    global.fetch = async () => ({
+    (globalThis as any).fetch = async () => ({
       ok: true,
       status: 200,
       headers: {
@@ -158,7 +159,7 @@ describe('gameSearchService', () => {
   });
 
   test('should handle malformed JSON response', async () => {
-    global.fetch = async () => ({
+    (globalThis as any).fetch = async () => ({
       ok: true,
       status: 200,
       headers: {
@@ -177,7 +178,7 @@ describe('gameSearchService', () => {
   test('should properly encode special characters', async () => {
     let capturedUrl = '';
     
-    global.fetch = async (url: string) => {
+    (globalThis as any).fetch = async (url: string) => {
       capturedUrl = url;
       return {
         ok: true,

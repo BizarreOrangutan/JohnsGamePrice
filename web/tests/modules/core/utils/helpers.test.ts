@@ -1,3 +1,4 @@
+// @ts-ignore
 import { describe, test, expect } from 'bun:test';
 
 // Example utility functions you might have
