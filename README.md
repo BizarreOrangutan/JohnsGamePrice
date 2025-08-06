@@ -2,6 +2,11 @@
 
 A modern, microservices-based game price comparison platform that helps users find the best deals across multiple gaming platforms. Built with a React TypeScript frontend, Node.js API Gateway, and Python FastAPI backend.
 
+# 🎥 EARLY DEVELOPMENT DEMO
+
+Apologies for the echo in this video, my camera and headphones were both picking up audio.
+YouTube link: https://youtu.be/14r3h3mTnzs
+
 ## 🚀 Features
 
 - **Real-time Game Search**: Autocomplete search with game images and metadata
