@@ -9,9 +9,10 @@ services:
       - API_KEY=${API_KEY}
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
+      interval: 5s        # Reduced from 15s
+      timeout: 3s         # Reduced from 10s
+      retries: 3          # Reduced from 5
+      start_period: 10s   # Reduced from 30s
     networks:
       - test-network
 
@@ -29,10 +30,10 @@ services:
         condition: service_healthy
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
-      interval: 30s      # Check every 30 seconds
-      timeout: 10s       # 10 second timeout
-      retries: 3         # Only 3 retries
-      start_period: 90s  # Wait 90 seconds before first check
+      interval: 5s        # Reduced from 30s
+      timeout: 3s         # Reduced from 15s
+      retries: 3          # Reduced from 5
+      start_period: 20s   # Reduced from 120s
     networks:
       - test-network
 
