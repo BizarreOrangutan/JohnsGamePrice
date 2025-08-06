@@ -87,7 +87,52 @@ async def get_game(
         logger.error(f"Unexpected error in get_game: {e}")
         logger.error(f"Response type: {type(games)}, Response: {games}")  # Debug info
         raise HTTPException(status_code=500, detail="Internal server error")
+    
+@app.get("/prices")
+async def get_prices(
+    id: list[str] = Query(..., description="Ids of the games we want prices of", min_length=1),
+    country: str = Query("US", description="Country code as a two character string", max_length=2),
+):
+    try:
+        # Validate id
+        if len(id) == 0:
+            raise HTTPException(status_code=400, detail="Game id cannot be empty")
+        
+        # Validate country code if provided
+        if country and len(country) != 2:
+            raise HTTPException(status_code=400, detail="Country code must be 2 characters")
 
+        logger.info(f"Fetching prices for game with ID: {id}")
+
+        # Handle optional parameters - use defaults if not provided
+        country_code = country.strip() if country else "GB"
+
+        prices = itad.prices(id, country_code)
+
+        if prices is None:
+            raise HTTPException(
+                status_code=503, 
+                detail="External API unavailable. Please try again later."
+            )         
+        
+        return(prices)
+
+    except HTTPException:
+        raise
+    except ValueError as e:
+        logger.error(f"Validation error: {e}")
+        raise HTTPException(status_code=400, detail=f"Invalid input: {str(e)}")
+    except ConnectionError as e:
+        logger.error(f"Connection error: {e}")
+        raise HTTPException(status_code=503, detail="Unable to connect to external service")
+    except TimeoutError as e:
+        logger.error(f"Timeout error: {e}")
+        raise HTTPException(status_code=504, detail="Request timed out")
+    except Exception as e:
+        logger.error(f"Unexpected error in get_prices: {e}")
+        logger.error(f"Response type: {type(id)}, Response: {id}")
+        raise HTTPException(status_code=500, detail="Internal server error")
+    
 @app.get("/health")
 async def health_check():
     try:
