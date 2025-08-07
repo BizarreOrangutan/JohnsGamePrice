@@ -22,8 +22,10 @@ services:
       - PORT=8080
       - PRICE_FETCHER_SERVICE_URL=http://price-fetcher:8000
       - LOG_LEVEL=info
+      - REDIS_URL=redis://redis:6379
     depends_on:
       - price-fetcher
+      - redis
     restart: unless-stopped
     networks:
       - john-network
@@ -41,6 +43,24 @@ services:
       - api-gateway
     networks:
       - john-network
+
+  redis:
+    image: redis:7
+    ports:
+      - "6379:6379"
+    restart: unless-stopped
+    networks:
+      - john-network
+
+  tester:
+    image: curlimages/curl:latest
+    depends_on:
+      - api-gateway
+      - price-fetcher
+      - redis
+    networks:
+      - john-network
+    entrypoint: [ "sleep", "infinity" ]
 
 networks:
   john-network:

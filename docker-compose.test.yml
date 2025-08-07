@@ -9,9 +9,10 @@ services:
       - API_KEY=${API_KEY}
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
+      interval: 5s
+      timeout: 3s
+      retries: 3
+      start_period: 10s
     networks:
       - test-network
 
@@ -24,15 +25,25 @@ services:
     environment:
       - PRICE_FETCHER_SERVICE_URL=http://price-fetcher:8000
       - NODE_ENV=production
+      - REDIS_URL=redis://redis:6379
     depends_on:
       price-fetcher:
         condition: service_healthy
+      redis:
+        condition: service_started
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
-      interval: 30s      # Check every 30 seconds
-      timeout: 10s       # 10 second timeout
-      retries: 3         # Only 3 retries
-      start_period: 90s  # Wait 90 seconds before first check
+      interval: 5s
+      timeout: 3s
+      retries: 3
+      start_period: 20s
+    networks:
+      - test-network
+
+  redis:
+    image: redis:7
+    ports:
+      - "6379:6379"
     networks:
       - test-network
 

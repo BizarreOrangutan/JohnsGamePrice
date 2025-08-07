@@ -2,6 +2,9 @@ import express from 'express';
 import cors from 'cors';
 import swaggerJsdoc from 'swagger-jsdoc';
 import swaggerUi from 'swagger-ui-express';
+import logger from './utils/logger.js';
+import { errorMiddleware } from './utils/errorHandler.js';
+// Import gameRoutes AFTER other imports
 import gameRoutes from './routes/games.js';
 
 export function createApp() {
@@ -39,7 +42,12 @@ export function createApp() {
   // Request logging (skip in test environment)
   if (process.env.NODE_ENV !== 'test') {
     app.use((req: express.Request, res: express.Response, next: express.NextFunction) => {
-      console.log(`${new Date().toISOString()} - ${req.method} ${req.path}`);
+      logger.info(`${req.method} ${req.path}`, {
+        ip: req.ip,
+        userAgent: req.get('User-Agent'),
+        query: req.query,
+        requestId: req.get('x-request-id') || 'unknown',
+      });
       next();
     });
   }
@@ -49,34 +57,49 @@ export function createApp() {
 
   // Health check route
   app.get('/health', (req: express.Request, res: express.Response) => {
+    logger.info('Health check requested', {
+      ip: req.ip,
+      requestId: req.get('x-request-id') || 'unknown',
+    });
     res.status(200).json({
       status: 'healthy',
       service: 'api-gateway',
       timestamp: new Date().toISOString(),
+      version: '1.0.0',
     });
   });
 
   // 404 handler
   app.use(/(.*)/, (req: express.Request, res: express.Response) => {
+    logger.warn(`404 - Endpoint not found: ${req.method} ${req.path}`, {
+      ip: req.ip,
+      userAgent: req.get('User-Agent'),
+      requestId: req.get('x-request-id') || 'unknown',
+    });
     res.status(404).json({
       error: 'Endpoint not found',
+      details: `The requested endpoint ${req.method} ${req.path} was not found`,
       availableEndpoints: [
         'GET /api/games/search?query=<game>',
+        'GET /api/games/prices?id=<game-id>',
         'GET /api-docs - API Documentation',
+        'GET /health - Health check',
       ],
+      timestamp: new Date().toISOString(),
     });
   });
 
-  // Error handling middleware
-  app.use(
-    (error: Error, req: express.Request, res: express.Response, _next: express.NextFunction) => {
-      console.error('Unhandled error:', error);
-      res.status(500).json({
-        error: 'Internal server error',
-        timestamp: new Date().toISOString(),
-      });
-    }
-  );
+  // Error handling middleware (must be last)
+  app.use(errorMiddleware);
+
+  // Log app initialization (only in non-test env)
+  if (process.env.NODE_ENV !== 'test') {
+    logger.info(`API Gateway initialized on port ${port}`, {
+      environment: process.env.NODE_ENV || 'development',
+      port,
+      version: '1.0.0',
+    });
+  }
 
   return app;
 }
