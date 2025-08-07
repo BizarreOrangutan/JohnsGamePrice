@@ -1,5 +1,6 @@
 from fastapi import FastAPI, Query, HTTPException
 from fastapi.responses import JSONResponse
+from src.logger import get_logger
 from src.itad_client import ITADClient
 import os
 import logging
@@ -8,7 +9,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+logger = get_logger()
 
 app = FastAPI(
     title="Game Price Fetcher API",
@@ -22,11 +23,7 @@ if not API_KEY:
     logger.error("API_KEY not found in environment variables")
     raise ValueError("API_KEY environment variable is required")
 
-try:
-    itad = ITADClient(API_KEY)
-except Exception as e:
-    logger.error(f"Failed to initialize ITAD client: {e}")
-    raise
+itad = ITADClient(API_KEY, logger=logger)
 
 @app.exception_handler(Exception)
 async def global_exception_handler(request, exc):
