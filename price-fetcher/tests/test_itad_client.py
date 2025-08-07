@@ -3,11 +3,17 @@ import requests
 from unittest.mock import Mock, patch
 from src.itad_client import ITADClient
 
+class MockLogger:
+    def info(self, *args, **kwargs): pass
+    def error(self, *args, **kwargs): pass
+    def warning(self, *args, **kwargs): pass
+    def debug(self, *args, **kwargs): pass
+
 class TestITADClient:
     
     def test_init(self):
         """Test client initialization"""
-        itad = ITADClient("test_key")
+        itad = ITADClient("test_key", logger=MockLogger())
         assert itad.api_key == "test_key"
         assert itad.base_url == "https://api.isthereanydeal.com"
 
