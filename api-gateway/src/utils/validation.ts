@@ -55,12 +55,12 @@ export const validateGameId = (id: unknown): string => {
 /**
  * Validates and parses response data
  */
-export const validateResponseData = (data: unknown, expectedType: string = 'object'): any => {
+export const validateResponseData = (data: unknown, expectedType: string): boolean => {
   if (expectedType === 'object') {
     if (typeof data !== 'object' || data === null) {
       throw new Error(`Expected object but received ${typeof data}`);
     }
   }
   
-  return data;
+  return true;
 };

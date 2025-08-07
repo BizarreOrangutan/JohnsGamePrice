@@ -1,13 +1,6 @@
 import express from 'express';
 import logger from './logger.js';
 import {
-  ValidationError,
-  ServiceUnavailableError,
-  DataFormatError,
-  NetworkError,
-  AuthenticationError,
-  RateLimitError,
-  NotFoundError,
   isValidationError,
   isServiceUnavailableError,
   isDataFormatError,
@@ -26,7 +19,9 @@ interface ErrorResponse {
   retryAfter?: string;
   timestamp: string;
   responseTime?: string;
-  [key: string]: any;
+  resource?: string;
+  resourceId?: string;
+  expectedFormat?: string;
 }
 
 interface RequestContext {
@@ -38,26 +33,33 @@ interface RequestContext {
   startTime?: number;
 }
 
+interface Logger {
+  info: (message: string, meta?: Record<string, unknown>) => void;
+  warn: (message: string, meta?: Record<string, unknown>) => void;
+  error: (message: string, meta?: Record<string, unknown>) => void;
+  debug: (message: string, meta?: Record<string, unknown>) => void;
+}
+
 /**
  * Safe logger that works in both test and non-test environments
  */
-const safeLogger = {
-  info: (message: string, meta?: any) => {
+const safeLogger: Logger = {
+  info: (message: string, meta?: Record<string, unknown>) => {
     if (logger && typeof logger.info === 'function') {
       logger.info(message, meta);
     }
   },
-  warn: (message: string, meta?: any) => {
+  warn: (message: string, meta?: Record<string, unknown>) => {
     if (logger && typeof logger.warn === 'function') {
       logger.warn(message, meta);
     }
   },
-  error: (message: string, meta?: any) => {
+  error: (message: string, meta?: Record<string, unknown>) => {
     if (logger && typeof logger.error === 'function') {
       logger.error(message, meta);
     }
   },
-  debug: (message: string, meta?: any) => {
+  debug: (message: string, meta?: Record<string, unknown>) => {
     if (logger && typeof logger.debug === 'function') {
       logger.debug(message, meta);
     }

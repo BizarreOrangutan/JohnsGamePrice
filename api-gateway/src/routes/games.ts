@@ -1,6 +1,6 @@
 import express from 'express';
 import logger from '../utils/logger.js';
-import { handleApiError, createRequestContext } from '../utils/errorHandler.js';
+import { handleApiError } from '../utils/errorHandler.js';
 import { fetchWithErrorHandling } from '../utils/fetchUtils.js';
 import { validateSearchQuery, validateGameId, validateResponseData } from '../utils/validation.js';
 import { DataFormatError } from '../utils/errors.js';

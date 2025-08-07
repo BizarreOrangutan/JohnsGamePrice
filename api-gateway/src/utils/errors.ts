@@ -134,12 +134,13 @@ export const createErrorFromResponse = (
       return new AuthenticationError(`Authentication failed: ${statusText}`);
     case 404:
       return new NotFoundError(`Resource not found: ${statusText}`, service);
-    case 429:
+    case 429: {
       const retryAfter = response.headers.get('retry-after');
       return new RateLimitError(
         `Rate limit exceeded: ${statusText}`, 
         retryAfter ? parseInt(retryAfter) : undefined
       );
+    }
     case 502:
     case 503:
     case 504:
@@ -154,5 +155,45 @@ export const createErrorFromResponse = (
         status,
         service
       );
+  }
+}
+
+/**
+ * Map HTTP status codes to corresponding error classes
+ */
+export const mapHttpStatusToError = (status: number, message: string, service: string): Error => {
+  switch (status) {
+    case 400: {
+      const error = new ValidationError(message, 'request');
+      return error;
+    }
+    case 401: {
+      const error = new AuthenticationError(message);
+      return error;
+    }
+    case 403: {
+      const error = new AuthenticationError(message);
+      return error;
+    }
+    case 404: {
+      const error = new NotFoundError(message, 'resource');
+      return error;
+    }
+    case 429: {
+      const error = new RateLimitError(message);
+      return error;
+    }
+    case 502: {
+      const error = new DataFormatError(message, 'JSON');
+      return error;
+    }
+    case 503: {
+      const error = new ServiceUnavailableError(message, status, service);
+      return error;
+    }
+    default: {
+      const error = new ServiceUnavailableError(message, status, service);
+      return error;
+    }
   }
 };
