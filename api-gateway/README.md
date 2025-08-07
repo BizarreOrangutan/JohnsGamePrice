@@ -7,9 +7,11 @@ A high-performance API Gateway built with Bun and TypeScript that orchestrates c
 - **Service Orchestration**: Routes requests between frontend and price-fetcher service
 - **Game Search Proxy**: Seamless integration with ITAD API through price-fetcher
 - **CORS Support**: Cross-origin requests handling for web frontend
-- **Error Handling**: Comprehensive error responses and service health monitoring
+- **Error Handling**: Comprehensive error responses, service health monitoring, and centralized error logging
 - **Type Safety**: Full TypeScript implementation with strict typing
 - **Fast Performance**: Built on Bun runtime for optimal speed
+- **Redis Caching**: Uses Redis for caching game data and improving response times
+- **Centralized Logging**: Integrated with Loki, Promtail, and Grafana for log aggregation and monitoring
 
 ## 📁 Project Structure
 
@@ -20,6 +22,11 @@ api-gateway/
 │   ├── index.ts                # Server entry point
 │   └── routes/
 │       └── games.ts            # Game search endpoint handlers
+│   └── utils/
+│       ├── errorHandler.ts     # Centralized error handling
+│       ├── logger.ts           # Logging utility
+│       ├── redisClient.ts      # Redis client setup
+│       └── ...
 ├── tests/
 │   ├── app.test.ts             # Core application tests
 │   ├── games.test.ts           # Game search endpoint tests
@@ -37,9 +44,11 @@ api-gateway/
 - **Bun**: Fast JavaScript runtime and package manager
 - **TypeScript**: Type-safe JavaScript with latest features
 - **Express**: Web application framework
+- **Redis**: In-memory caching for fast data retrieval
 - **Supertest**: HTTP assertion testing
 - **ESLint**: Code linting with TypeScript support
 - **Prettier**: Code formatting
+- **Loki/Promtail/Grafana**: Centralized logging and monitoring
 
 ## 🚀 Quick Start
 
@@ -59,6 +68,7 @@ api-gateway/
    - **Health check**: `http://localhost:8080/health`
    - **API docs**: `http://localhost:8080/api-docs/`
    - **Game search**: `http://localhost:8080/api/games/search?query=portal`
+   - **Redis status**: `http://localhost:8080/redis-status`
 
 ### **Production Build**
 
@@ -83,6 +93,7 @@ api-gateway/
    ```bash
    docker run -p 8080:8080 \
      -e PRICE_FETCHER_SERVICE_URL=http://price-fetcher:8000 \
+     -e REDIS_URL=redis://redis:6379 \
      johnsgameprice-api-gateway
    ```
 
@@ -134,8 +145,22 @@ curl "http://localhost:8080/api/games/search?query=portal"
   "service": "api-gateway",
   "timestamp": "2025-01-01T12:00:00Z",
   "dependencies": {
-    "price-fetcher": "healthy"
+    "price-fetcher": "healthy",
+    "redis": "healthy"
   }
+}
+```
+
+### **Redis Status Endpoint**
+
+**Endpoint**: `GET /redis-status`
+
+**Description**: Returns the status of the Redis cache connection.
+
+**Example Response**:
+```json
+{
+  "redis": "connected"
 }
 ```
 
@@ -146,6 +171,9 @@ curl "http://localhost:8080/api/games/search?query=portal"
 ```bash
 # Service URLs
 PRICE_FETCHER_SERVICE_URL=http://localhost:8000
+
+# Redis Configuration
+REDIS_URL=redis://localhost:6379
 
 # Server Configuration
 PORT=8080
@@ -158,10 +186,11 @@ CORS_ORIGIN=*
 
 ### **Service Dependencies**
 
-The API Gateway requires the Price Fetcher service to be running:
+The API Gateway requires the Price Fetcher service and Redis to be running:
 
 - **Price Fetcher**: `http://localhost:8000` (or container network)
-- **Health Checks**: Monitors service availability
+- **Redis**: `redis://localhost:6379` (or container network)
+- **Health Checks**: Monitors service and cache availability
 - **Error Handling**: Graceful fallbacks when services are unavailable
 
 ## 🧪 Testing
@@ -221,6 +250,11 @@ bun run format
 bun run format:check
 ```
 
+### **CodeQL Security Scanning**
+
+- Automated security analysis is enabled via GitHub Actions and CodeQL.
+- See `.github/workflows/codeql.yml` for configuration.
+
 ## 🏗 Architecture
 
 ### **Request Flow**
@@ -240,7 +274,8 @@ ITAD API
 - **Service Errors**: Proper HTTP status codes and error messages
 - **Timeout Handling**: Request timeouts with appropriate responses
 - **Fallback Responses**: Graceful degradation when services are unavailable
-- **Logging**: Comprehensive error logging for debugging
+- **Centralized Logging**: All errors and warnings are logged and can be viewed in Grafana
+- **Logging Utility**: All logs are structured and sent to Loki via Promtail
 
 ### **CORS Configuration**
 
@@ -272,6 +307,7 @@ app.get('/api/games/search', async (req, res) => {
       timestamp: new Date().toISOString()
     });
   } catch (error) {
+    logger.error('Search failed', { error });
     res.status(500).json({ error: 'Search failed' });
   }
 });
@@ -283,11 +319,31 @@ app.get('/api/games/search', async (req, res) => {
 - **Error Normalization**: Consistent error response format
 - **Metadata Addition**: Adds timestamps and request tracking
 
-## 📊 Monitoring
+## 📊 Monitoring & Logging
+
+### **Centralized Logging with Loki, Promtail, and Grafana**
+
+- **Promtail** collects logs from all Docker containers and forwards them to **Loki**.
+- **Loki** stores and indexes logs for fast querying.
+- **Grafana** provides dashboards and log search capabilities.
+- **How to use**:
+  1. Start the stack:
+     ```bash
+     docker compose up -d
+     ```
+  2. Access Grafana at [http://localhost:3001](http://localhost:3001) (default: `admin`/`admin`)
+  3. Use the **Explore** tab to query logs, e.g.:
+     ```
+     {compose_service="api-gateway"}
+     ```
+     or visualize log rates with:
+     ```
+     count_over_time({compose_service="api-gateway"}[5m])
+     ```
 
 ### **Health Checks**
 
-- **Service Health**: Monitors price-fetcher availability
+- **Service Health**: Monitors price-fetcher and Redis availability
 - **Response Times**: Tracks API response performance
 - **Error Rates**: Monitors error frequency and types
 
@@ -296,6 +352,7 @@ app.get('/api/games/search', async (req, res) => {
 - **Request Logging**: HTTP request/response logging
 - **Error Logging**: Detailed error information
 - **Performance Logging**: Response time tracking
+- **Centralized Log Viewing**: All logs can be viewed and analyzed in Grafana
 
 ## 🚀 Future Enhancements
 
