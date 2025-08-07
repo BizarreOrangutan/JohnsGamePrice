@@ -25,6 +25,7 @@ services:
     environment:
       - PRICE_FETCHER_SERVICE_URL=http://price-fetcher:8000
       - NODE_ENV=production
+      - REDIS_URL=redis://redis:6379
     depends_on:
       price-fetcher:
         condition: service_healthy
