@@ -1,81 +1,84 @@
-import { beforeEach, afterEach, beforeAll, afterAll, mock } from 'bun:test';
-
-// Mock fetch globally for all tests
-global.fetch = mock(() => Promise.resolve({
-  ok: true,
-  status: 200,
-  json: async () => ({}),
-} as Response));
-
-// Mock console methods to reduce noise in test output
-const originalConsoleLog = console.log;
-const originalConsoleError = console.error;
-
-beforeAll(() => {
-  // Silence console.log in tests unless needed
-  console.log = mock(() => {});
-  console.error = mock(() => {});
-});
-
-afterAll(() => {
-  // Restore original console methods
-  console.log = originalConsoleLog;
-  console.error = originalConsoleError;
-});
+import { beforeEach, mock } from 'bun:test';
 
 beforeEach(() => {
-  // Clear any environment variables that might affect tests
-  delete process.env.GAME_ID_SERVICE_URL;
-  delete process.env.PRICE_SERVICE_URL;
-  delete process.env.PORT;
-  
-  // Set test environment
+  // Set test environment FIRST - this must be set before any imports
   process.env.NODE_ENV = 'test';
+  process.env.LOG_LEVEL = 'silent';
+  
+  // Clear other env vars
+  delete process.env.PRICE_FETCHER_SERVICE_URL;
+  delete process.env.PORT;
 });
 
-// Helper function to mock successful fetch responses
+// Mock fetch utilities and logger
+const mockFetchUtils = {
+  fetchWithErrorHandling: mock(),
+  fetchWithTimeout: mock(),
+};
+
+const mockLogger = {
+  info: mock(() => {}),
+  warn: mock(() => {}),
+  error: mock(() => {}),
+  debug: mock(() => {}),
+};
+
+// Override the modules
+const originalRequire = require;
+require = function(id: string) {
+  if (id.includes('fetchUtils')) {
+    return mockFetchUtils;
+  }
+  if (id.includes('logger')) {
+    return { default: mockLogger };
+  }
+  //@ts-ignore
+  return originalRequire.apply(this, arguments);
+} as any;
+
 export const mockFetchSuccess = (data: any) => {
-  global.fetch = mock(() => Promise.resolve({
+  mockFetchUtils.fetchWithErrorHandling.mockResolvedValue({
     ok: true,
     status: 200,
     json: async () => data,
-    text: async () => JSON.stringify(data),
-  } as Response));
+  });
 };
 
-// Helper function to mock failed fetch responses
-export const mockFetchError = (status: number = 500, statusText: string = 'Internal Server Error') => {
-  global.fetch = mock(() => Promise.resolve({
-    ok: false,
-    status,
-    statusText,
-    json: async () => ({ error: statusText }),
-    text: async () => JSON.stringify({ error: statusText }),
-  } as Response));
+export const mockFetchError = (status: number, statusText: string = 'Error') => {
+  const { ServiceUnavailableError, NotFoundError, AuthenticationError, RateLimitError } = require('../src/utils/errors.js');
+  
+  let error;
+  switch (status) {
+    case 404:
+      error = new NotFoundError('Game not found', 'game');
+      break;
+    case 401:
+    case 403:
+      error = new AuthenticationError('Authentication failed');
+      break;
+    case 429:
+      error = new RateLimitError('Rate limit exceeded', 60);
+      break;
+    case 503:
+      error = new ServiceUnavailableError('Service unavailable', status, 'price-fetcher');
+      break;
+    default:
+      error = new ServiceUnavailableError(statusText, status, 'price-fetcher');
+  }
+  
+  mockFetchUtils.fetchWithErrorHandling.mockRejectedValue(error);
 };
 
-// Helper function to mock network errors
-export const mockFetchNetworkError = (message: string = 'Network error') => {
-  global.fetch = mock(() => Promise.reject(
-    new TypeError(`fetch failed: ${message}`)
-  ));
+export const mockFetchNetworkError = () => {
+  const { NetworkError } = require('../src/utils/errors.js');
+  const error = new NetworkError('Network connection failed');
+  mockFetchUtils.fetchWithErrorHandling.mockRejectedValue(error);
 };
 
-// Helper to get the mocked fetch function
-export const getMockFetch = () => global.fetch;
-
-// Setup default environment variables for tests
-export const setupTestEnv = () => {
-  process.env.GAME_ID_SERVICE_URL = 'http://localhost:8000';
-  process.env.PRICE_SERVICE_URL = 'http://localhost:8001';
-  process.env.PORT = '8080';
-  process.env.LOG_LEVEL = 'silent';
-};
-
-// Cleanup test environment
-export const cleanupTestEnv = () => {
-  delete process.env.GAME_ID_SERVICE_URL;
-  delete process.env.PRICE_SERVICE_URL;
-  delete process.env.PORT;
-  delete process.env.LOG_LEVEL;
+export const mockFetchInvalidJson = () => {
+  mockFetchUtils.fetchWithErrorHandling.mockResolvedValue({
+    ok: true,
+    status: 200,
+    json: async () => { throw new Error('Invalid JSON'); },
+  });
 };

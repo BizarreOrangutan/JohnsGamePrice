@@ -1,4 +1,9 @@
 import express from 'express';
+import logger from '../utils/logger.js';
+import { handleApiError, createRequestContext } from '../utils/errorHandler.js';
+import { fetchWithErrorHandling } from '../utils/fetchUtils.js';
+import { validateSearchQuery, validateGameId, validateResponseData } from '../utils/validation.js';
+import { DataFormatError } from '../utils/errors.js';
 
 const router = express.Router();
 
@@ -29,44 +34,142 @@ interface PriceFetcherServiceResponse {
  *       200:
  *         description: Game search results
  *       400:
- *         description: Missing game name
+ *         description: Missing or invalid game name
+ *       503:
+ *         description: External service unavailable
+ *       500:
+ *         description: Internal server error
  */
 router.get('/search', async (req: express.Request, res: express.Response) => {
+  const startTime = Date.now();
+  
   try {
-    const { query } = req.query;
-
-    if (!query) {
-      return res.status(400).json({
-        error: 'Query parameter is required',
-        example: '/api/games/search?query=portal',
-      });
-    }
-
-    console.log(`Searching for: "${query}"`);
+    const query = validateSearchQuery(req.query.query);
+    
+    logger.info(`Searching for game: "${query}"`, {
+      query,
+      ip: req.ip,
+      requestId: req.get('x-request-id') || 'unknown',
+    });
 
     const priceFetcherServiceUrl = process.env.PRICE_FETCHER_SERVICE_URL || 'http://price-fetcher:8000';
+    const searchUrl = `${priceFetcherServiceUrl}/game-ids?title=${encodeURIComponent(query)}&result_num=10`;
     
-    const response = await fetch(`${priceFetcherServiceUrl}/game-ids?title=${encodeURIComponent(query as string)}&result_num=10`);
+    const response = await fetchWithErrorHandling(searchUrl, 'price-fetcher', { 
+      timeout: 15000 
+    });
     
-    if (!response.ok) {
-      throw new Error(`Price fetcher service error: ${response.status}`);
+    let data: PriceFetcherServiceResponse;
+    
+    try {
+      data = await response.json() as PriceFetcherServiceResponse;
+      validateResponseData(data, 'object');
+    } catch (jsonError) {
+      logger.error('Failed to parse JSON response from price fetcher', {
+        query,
+        serviceUrl: priceFetcherServiceUrl,
+        error: jsonError instanceof Error ? jsonError.message : 'Unknown JSON error',
+      });
+      throw new DataFormatError('Invalid JSON response from price fetcher service', 'JSON');
     }
     
-    const data = await response.json() as PriceFetcherServiceResponse;
+    const responseTime = Date.now() - startTime;
+    
+    logger.info(`Game search completed successfully`, {
+      query,
+      resultsCount: data.count || 0,
+      gamesFound: data.games?.length || 0,
+      responseTimeMs: responseTime,
+    });
     
     res.status(200).json({
       query,
       results: data.games || [],
       count: data.count || 0,
       timestamp: new Date().toISOString(),
+      responseTime: `${responseTime}ms`,
     });
 
   } catch (error) {
-    console.error('Search error:', error);
-    res.status(500).json({
-      error: 'Search failed',
-      details: error instanceof Error ? error.message : 'Unknown error',
+    handleApiError(error, req, res, { startTime });
+  }
+});
+
+/**
+ * @swagger
+ * /api/games/prices:
+ *   get:
+ *     summary: Get game prices
+ *     tags:
+ *       - Games
+ *     parameters:
+ *       - name: id
+ *         in: query
+ *         required: true
+ *         description: Game ID to get prices for
+ *         example: 018d937f-07fc-72ed-8517-d8e24cb1eb22
+ *     responses:
+ *       200:
+ *         description: Game price information
+ *       400:
+ *         description: Missing or invalid game ID
+ *       404:
+ *         description: Game not found
+ *       503:
+ *         description: External service unavailable
+ *       500:
+ *         description: Internal server error
+ */
+router.get('/prices', async (req: express.Request, res: express.Response) => {
+  const startTime = Date.now();
+  
+  try {
+    const gameId = validateGameId(req.query.id);
+
+    logger.info(`Getting prices for game ID: "${gameId}"`, {
+      gameId,
+      ip: req.ip,
+      requestId: req.get('x-request-id') || 'unknown',
     });
+
+    const priceFetcherServiceUrl = process.env.PRICE_FETCHER_SERVICE_URL || 'http://price-fetcher:8000';
+    const pricesUrl = `${priceFetcherServiceUrl}/prices?id=${encodeURIComponent(gameId)}`;
+    
+    const response = await fetchWithErrorHandling(pricesUrl, 'price-fetcher', { 
+      timeout: 20000 
+    });
+    
+    let data: unknown;
+    
+    try {
+      data = await response.json();
+      validateResponseData(data, 'object');
+    } catch (jsonError) {
+      logger.error('Failed to parse JSON response from price fetcher', {
+        gameId,
+        serviceUrl: priceFetcherServiceUrl,
+        error: jsonError instanceof Error ? jsonError.message : 'Unknown JSON error',
+      });
+      throw new DataFormatError('Invalid JSON response from price fetcher service', 'JSON');
+    }
+    
+    const responseTime = Date.now() - startTime;
+    
+    logger.info(`Successfully retrieved prices for game`, {
+      gameId,
+      pricesCount: Object.keys(data as object).length,
+      responseTimeMs: responseTime,
+    });
+    
+    res.status(200).json({
+      id: gameId,
+      prices: data,
+      timestamp: new Date().toISOString(),
+      responseTime: `${responseTime}ms`,
+    });
+
+  } catch (error) {
+    handleApiError(error, req, res, { startTime });
   }
 });
 
