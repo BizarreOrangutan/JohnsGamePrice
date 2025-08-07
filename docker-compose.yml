@@ -60,7 +60,7 @@ services:
       - redis
     networks:
       - john-network
-    entrypoint: [ "sleep", "infinity" ] # So you can exec in for debugging, or override in CI
+    entrypoint: [ "sleep", "infinity" ]
 
 networks:
   john-network:
