@@ -30,6 +30,16 @@ interface PriceFetcherServiceResponse {
  *         required: true
  *         description: Name of the game to search for
  *         example: portal
+ *       - name: result_num
+ *         in: query
+ *         required: false
+ *         description: Number of results to return (1-100)
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *           maximum: 100
+ *           default: 10
+ *         example: 20
  *     responses:
  *       200:
  *         description: Game search results
@@ -42,25 +52,38 @@ interface PriceFetcherServiceResponse {
  */
 router.get('/search', async (req: express.Request, res: express.Response) => {
   const startTime = Date.now();
-  
+
   try {
     const query = validateSearchQuery(req.query.query);
-    
+
+    // Parse and validate result_num
+    let resultNum = 10;
+    if (req.query.result_num !== undefined) {
+      const parsed = parseInt(req.query.result_num as string, 10);
+      if (isNaN(parsed) || parsed < 1 || parsed > 100) {
+        return res.status(400).json({
+          error: 'Invalid result_num: must be an integer between 1 and 100',
+        });
+      }
+      resultNum = parsed;
+    }
+
     logger.info(`Searching for game: "${query}"`, {
       query,
+      resultNum,
       ip: req.ip,
       requestId: req.get('x-request-id') || 'unknown',
     });
 
     const priceFetcherServiceUrl = process.env.PRICE_FETCHER_SERVICE_URL || 'http://price-fetcher:8000';
-    const searchUrl = `${priceFetcherServiceUrl}/game-ids?title=${encodeURIComponent(query)}&result_num=10`;
-    
+    const searchUrl = `${priceFetcherServiceUrl}/game-ids?title=${encodeURIComponent(query)}&result_num=${resultNum}`;
+
     const response = await fetchWithErrorHandling(searchUrl, 'price-fetcher', { 
       timeout: 15000 
     });
-    
+
     let data: PriceFetcherServiceResponse;
-    
+
     try {
       data = await response.json() as PriceFetcherServiceResponse;
       validateResponseData(data, 'object');
@@ -72,16 +95,17 @@ router.get('/search', async (req: express.Request, res: express.Response) => {
       });
       throw new DataFormatError('Invalid JSON response from price fetcher service', 'JSON');
     }
-    
+
     const responseTime = Date.now() - startTime;
-    
+
     logger.info(`Game search completed successfully`, {
       query,
+      resultNum,
       resultsCount: data.count || 0,
       gamesFound: data.games?.length || 0,
       responseTimeMs: responseTime,
     });
-    
+
     res.status(200).json({
       query,
       results: data.games || [],

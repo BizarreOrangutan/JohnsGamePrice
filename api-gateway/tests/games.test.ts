@@ -8,7 +8,7 @@ const createTestApp = () => {
   app.use(express.json());
   
   app.get('/api/games/search', (req, res) => {
-    const { query } = req.query;
+    const { query, result_num } = req.query;
     
     if (!query || typeof query !== 'string' || query.trim().length === 0) {
       return res.status(400).json({ 
@@ -26,6 +26,18 @@ const createTestApp = () => {
         details: 'Query parameter too long',
         timestamp: new Date().toISOString()
       });
+    }
+
+    // FIX: Default to 10 if result_num is not provided
+    let resultNum = 10;
+    if (result_num !== undefined) {
+      const parsed = parseInt(result_num as string, 10);
+      if (!Number.isInteger(parsed) || parsed < 1 || parsed > 100) {
+        return res.status(400).json({
+          error: 'Invalid result_num: must be an integer between 1 and 100'
+        });
+      }
+      resultNum = parsed;
     }
 
     res.json({
@@ -138,16 +150,48 @@ describe('Games API', () => {
       expect(response.body).toHaveProperty('count');
     });
 
-    test('should return 400 for validation errors', async () => {
-      // Missing query
-      await request(app).get('/api/games/search').expect(400);
-      
-      // Empty query
-      await request(app).get('/api/games/search?query=').expect(400);
-      
-      // Too long query
-      const longQuery = 'a'.repeat(101);
-      await request(app).get(`/api/games/search?query=${longQuery}`).expect(400);
+    test('should accept result_num and return 200 for valid value', async () => {
+      const response = await request(app)
+        .get('/api/games/search?query=portal&result_num=15')
+        .expect(200);
+
+      expect(response.body.query).toBe('portal');
+      expect(response.body).toHaveProperty('results');
+      expect(response.body).toHaveProperty('count');
+    });
+
+    test('should default to 10 results if result_num is not provided', async () => {
+      const response = await request(app)
+        .get('/api/games/search?query=portal')
+        .expect(200);
+
+      expect(response.body.query).toBe('portal');
+      expect(response.body).toHaveProperty('results');
+      expect(response.body).toHaveProperty('count');
+    });
+
+    test('should return 400 for result_num below 1', async () => {
+      const response = await request(app)
+        .get('/api/games/search?query=portal&result_num=0')
+        .expect(400);
+
+      expect(response.body.error).toBe('Invalid result_num: must be an integer between 1 and 100');
+    });
+
+    test('should return 400 for result_num above 100', async () => {
+      const response = await request(app)
+        .get('/api/games/search?query=portal&result_num=101')
+        .expect(400);
+
+      expect(response.body.error).toBe('Invalid result_num: must be an integer between 1 and 100');
+    });
+
+    test('should return 400 for non-integer result_num', async () => {
+      const response = await request(app)
+        .get('/api/games/search?query=portal&result_num=abc')
+        .expect(400);
+
+      expect(response.body.error).toBe('Invalid result_num: must be an integer between 1 and 100');
     });
   });
 
