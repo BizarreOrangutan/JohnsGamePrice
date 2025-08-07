@@ -9,6 +9,7 @@ A Python microservice that retrieves game metadata and pricing information from 
 - **Docker Support**: Containerized deployment with multi-stage builds
 - **Comprehensive Testing**: Unit tests with mocked external dependencies
 - **Type Safety**: Full Python type hints throughout the codebase
+- **Improved Error Handling**: Consistent, informative error responses and centralized error logging
 
 ## 📁 Project Structure
 
@@ -17,6 +18,8 @@ price-fetcher/
 ├── src/
 │   ├── itad_client.py       # ITAD API client for game search and pricing
 │   ├── main.py              # FastAPI application
+│   ├── logger.py            # Centralized logging utility
+│   ├── itad_error_handlers.py # Custom error handling for ITAD API
 │   └── __init__.py          # Package initialization
 ├── tests/
 │   └── test_itad_client.py  # Unit tests with mocking
@@ -24,8 +27,8 @@ price-fetcher/
 ├── requirements.txt         # Production dependencies
 ├── requirements-dev.txt     # Development dependencies
 ├── .env.example             # Environment variable template
-├── .gitignore              # Git ignore patterns
-└── README.md               # This documentation
+├── .gitignore               # Git ignore patterns
+└── README.md                # This documentation
 ```
 
 ## 🛠 Tech Stack
@@ -145,6 +148,18 @@ curl "http://localhost:8000/price/steam?game_id=620&currency=USD"
 }
 ```
 
+### **Error Handling**
+
+- All endpoints return clear, consistent error responses with appropriate HTTP status codes.
+- Errors are logged centrally for monitoring and debugging.
+- Example error response:
+  ```json
+  {
+    "detail": "Game not found"
+  }
+  ```
+- Common error cases include missing parameters, invalid game IDs, or upstream API failures.
+
 ## 🔐 Environment Configuration
 
 Create a `.env` file with your ITAD API key:
@@ -202,7 +217,7 @@ class ITADClient:
 - **Automatic Documentation**: OpenAPI/Swagger UI at `/docs`
 - **Type Safety**: Pydantic models for request/response validation
 - **Async Support**: Non-blocking I/O for better performance
-- **Error Handling**: Graceful error responses with proper HTTP status codes
+- **Error Handling**: Graceful error responses with proper HTTP status codes and centralized logging
 
 ## 🚀 Future Enhancements
 

@@ -15,6 +15,8 @@ YouTube link: https://youtu.be/14r3h3mTnzs
 - **Microservices Architecture**: Scalable and maintainable service-oriented design
 - **Type Safety**: Full TypeScript and Python type safety throughout
 - **Containerized Deployment**: Docker support for all services
+- **Centralized Logging & Monitoring**: Loki, Promtail, and Grafana integration
+- **Automated Code Scanning**: CodeQL integration for security and code quality
 
 ## 🏗 Architecture
 
@@ -64,6 +66,7 @@ JohnsGamePrice/
 │   └── requirements.txt
 ├── .github/
 │   └── workflows/
+│       └── codeql.yml             # CodeQL security/code scanning
 │       └── test.yml               # CI/CD pipeline
 ├── docker-compose.yml             # Development environment
 ├── docker-compose.test.yml        # Testing environment
@@ -95,6 +98,98 @@ JohnsGamePrice/
 - **Docker**: Containerization
 - **Docker Compose**: Multi-service orchestration
 - **GitHub Actions**: CI/CD pipeline
+- **Loki, Promtail, Grafana**: Centralized logging and monitoring
+- **CodeQL**: Automated code scanning
+
+---
+
+## 🆕 New Endpoints
+
+### API Gateway
+
+- **Game Search:**  
+  `GET /api/games/search?query=portal`  
+  Proxies search requests to the Price Fetcher service.
+
+- **Health Check:**  
+  `GET /health`  
+  Returns the health status of the API Gateway and its dependencies.
+
+### Price Fetcher
+
+- **Game Search:**  
+  `GET /game-ids?title=portal&result_num=5`  
+  Searches for games by title using the ITAD API.
+
+- **Price Lookup:**  
+  `GET /price/steam?game_id=620&currency=USD`  
+  Retrieves current Steam price for a game.
+
+- **Health Check:**  
+  `GET /health`  
+  Returns the health status of the Price Fetcher service.
+
+---
+
+## 🛡️ Code Quality: CodeQL Integration
+
+This project uses [GitHub CodeQL](https://github.com/github/codeql) for automated code scanning and security analysis.
+
+- The workflow is defined in `.github/workflows/codeql.yml`.
+- CodeQL runs on every push and pull request to the `main` branch.
+- It scans for vulnerabilities in JavaScript/TypeScript, Python, and GitHub Actions workflows.
+
+**To enable or update CodeQL:**
+1. Ensure `.github/workflows/codeql.yml` exists and includes all relevant languages.
+2. Example matrix:
+   ```yaml
+   matrix:
+     language: [ 'typescript', 'python', 'javascript' ]
+   ```
+
+---
+
+## 📊 Logging & Monitoring: Loki, Promtail, and Grafana
+
+This project uses the [Grafana Loki stack](https://grafana.com/oss/loki/) for centralized log aggregation and visualization.
+
+### How it works
+
+- **Promtail** collects logs from all Docker containers and forwards them to **Loki**.
+- **Loki** stores and indexes logs for fast querying.
+- **Grafana** provides dashboards and log search capabilities.
+
+### Usage
+
+1. **Start the stack:**
+   ```bash
+   docker compose up -d
+   ```
+2. **Access Grafana:**  
+   [http://localhost:3001](http://localhost:3001)  
+   Default login: `admin` / `admin`
+
+3. **View logs:**
+   - Go to the **Explore** tab in Grafana.
+   - Select **Loki** as the data source.
+   - Query logs by service, e.g.:
+     ```
+     {compose_service="api-gateway"}
+     ```
+   - Use functions like `count_over_time` for time series graphs:
+     ```
+     count_over_time({compose_service="api-gateway"}[5m])
+     ```
+
+4. **Dashboards:**  
+   Create dashboards to visualize log volume, error rates, and service health.
+
+### Configuration
+
+- Log collection is configured in `promtail-config.yml`.
+- The stack is defined in `docker-compose.yml` with persistent storage for Grafana dashboards.
+
+---
 
 ## 🚀 Quick Start
 
@@ -129,6 +224,7 @@ JohnsGamePrice/
    - **API Gateway**: http://localhost:8080
    - **Price Fetcher**: http://localhost:8000
    - **API Documentation**: http://localhost:8000/docs
+   - **Grafana Monitoring**: http://localhost:3001
 
 ### **Individual Service Development**
 
@@ -234,6 +330,16 @@ curl "http://localhost:8080/api/games/search?query=portal"
 - **API Gateway**: `GET http://localhost:8080/health`
 - **Price Fetcher**: `GET http://localhost:8000/health`
 
+### **Price Fetcher Endpoints**
+
+- **Game Search**:  
+  `GET /game-ids?title={game_title}&result_num={n}`
+
+- **Price Lookup**:  
+  `GET /price/steam?game_id={id}&currency={currency}`
+
+---
+
 ## 🔧 Configuration
 
 ### **Environment Variables**
@@ -299,8 +405,22 @@ The project includes a comprehensive GitHub Actions workflow:
 - **Docker Builds**: Builds and tests Docker images
 - **Integration Tests**: End-to-end service testing
 - **Conditional Execution**: Only tests changed services
+- **CodeQL Security Scanning**: Automated code scanning for JS/TS, Python, and Actions
 
 Trigger full test suite with commit message: `[test all]`
+
+## 📊 Logging & Monitoring
+
+- **Loki, Promtail, and Grafana** are used for centralized log aggregation and visualization.
+- Logs from all containers are collected and can be queried in Grafana.
+- Example query in Grafana Explore:
+  ```
+  {compose_service="api-gateway"}
+  ```
+- Use functions like `count_over_time` for time series graphs:
+  ```
+  count_over_time({compose_service="api-gateway"}[5m])
+  ```
 
 ## 🎯 Key Features
 
