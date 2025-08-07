@@ -9,7 +9,7 @@ const createTestApp = () => {
   
   app.get('/api/games/search', (req, res) => {
     const { query, result_num } = req.query;
-    
+
     if (!query || typeof query !== 'string' || query.trim().length === 0) {
       return res.status(400).json({ 
         error: 'Validation error', 
@@ -18,7 +18,7 @@ const createTestApp = () => {
         timestamp: new Date().toISOString()
       });
     }
-    
+
     if (query.length > 100) {
       return res.status(400).json({ 
         error: 'Validation error', 
@@ -28,7 +28,7 @@ const createTestApp = () => {
       });
     }
 
-    // FIX: Default to 10 if result_num is not provided
+    // Default to 10 if result_num is not provided
     let resultNum = 10;
     if (result_num !== undefined) {
       const parsed = parseInt(result_num as string, 10);
@@ -40,10 +40,16 @@ const createTestApp = () => {
       resultNum = parsed;
     }
 
+    // Simulate returning resultNum results
+    const results = Array.from({ length: resultNum }, (_, i) => ({
+      id: `game-${i + 1}`,
+      title: `Game ${i + 1}`
+    }));
+
     res.json({
       query,
-      results: [],
-      count: 0,
+      results,
+      count: results.length,
       timestamp: new Date().toISOString(),
       responseTime: '10ms'
     });

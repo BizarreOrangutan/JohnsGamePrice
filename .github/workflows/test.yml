@@ -255,6 +255,19 @@ jobs:
             echo "ℹ️  Skipping games search test (no real API key configured)"
           fi
           
+          # Test api-gateway games search endpoint with result_num
+          echo "Testing api-gateway games search endpoint with result_num..."
+          if [ "${{ secrets.ISTHEREANYDEAL_API_KEY }}" != "" ]; then
+            if curl -f -s "http://localhost:8080/api/games/search?query=test&result_num=15" > /dev/null; then
+              echo "✅ Games search endpoint with result_num passed"
+            else
+              echo "❌ Games search endpoint with result_num failed"
+              exit 1
+            fi
+          else
+            echo "ℹ️  Skipping games search test with result_num (no real API key configured)"
+          fi
+          
           # Test price endpoint with mock data
           echo "Testing price endpoint..."
           if curl -f -s "http://localhost:8000/prices?id=test-game-id" > /dev/null; then
