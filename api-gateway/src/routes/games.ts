@@ -4,6 +4,7 @@ import { handleApiError } from '../utils/errorHandler.js';
 import { fetchWithErrorHandling } from '../utils/fetchUtils.js';
 import { validateSearchQuery, validateGameId, validateResponseData } from '../utils/validation.js';
 import { DataFormatError } from '../utils/errors.js';
+import { redisClient } from '../utils/redisClient.js';
 
 const router = express.Router();
 
@@ -64,12 +65,18 @@ router.get('/search', async (req: express.Request, res: express.Response) => {
 
   try {
     const query = validateSearchQuery(req.query.query);
-
-    // Pagination parameters
     const page = Math.max(1, parseInt(req.query.page as string, 10) || 1);
     const pageSize = Math.min(100, Math.max(1, parseInt(req.query.page_size as string, 10) || 20));
 
-    // Always fetch the max allowed from price-fetcher (e.g., 100)
+    // Compose cache key
+    const cacheKey = `gamesearch:${query}:${page}:${pageSize}`;
+    const cached = await redisClient.get(cacheKey);
+    if (cached) {
+      const cachedData = JSON.parse(cached);
+      return res.status(200).json({ ...cachedData, cached: true });
+    }
+
+    // Fetch from price-fetcher as before
     const fetchLimit = 100;
     const priceFetcherServiceUrl = process.env.PRICE_FETCHER_SERVICE_URL || 'http://price-fetcher:8000';
     const searchUrl = `${priceFetcherServiceUrl}/game-ids?title=${encodeURIComponent(query)}&result_num=${fetchLimit}`;
@@ -98,7 +105,7 @@ router.get('/search', async (req: express.Request, res: express.Response) => {
 
     const responseTime = Date.now() - startTime;
 
-    res.status(200).json({
+    const responseData = {
       query,
       results: pagedResults,
       count: total,
@@ -107,7 +114,12 @@ router.get('/search', async (req: express.Request, res: express.Response) => {
       total_pages: Math.ceil(total / pageSize),
       timestamp: new Date().toISOString(),
       responseTime: `${responseTime}ms`,
-    });
+    };
+
+    // Cache the result for 5 minutes (300 seconds)
+    await redisClient.setEx(cacheKey, 300, JSON.stringify(responseData));
+
+    res.status(200).json(responseData);
 
   } catch (error) {
     handleApiError(error, req, res, { startTime });

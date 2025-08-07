@@ -99,6 +99,10 @@ jobs:
         run: |
           docker build --target dev -t api-gateway:test ./api-gateway
           
+      - name: Start Redis for tests
+        run: |
+          docker run -d --name redis-test -p 6379:6379 redis:7
+
       - name: Run API Gateway tests
         timeout-minutes: 5
         run: |
@@ -106,7 +110,13 @@ jobs:
             --entrypoint="" \
             api-gateway:test \
             bun test --timeout 30000
-            
+
+      - name: Cleanup Redis after tests
+        if: always()
+        run: |
+          docker stop redis-test || true
+          docker rm redis-test || true
+
       - name: Run API Gateway lint checks
         if: success()
         timeout-minutes: 2
