@@ -30,15 +30,24 @@ interface PriceFetcherServiceResponse {
  *         required: true
  *         description: Name of the game to search for
  *         example: portal
- *       - name: result_num
+ *       - name: page
  *         in: query
  *         required: false
- *         description: Number of results to return (1-100)
+ *         description: Page number (starts at 1)
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *           default: 1
+ *         example: 1
+ *       - name: page_size
+ *         in: query
+ *         required: false
+ *         description: Results per page (max 100)
  *         schema:
  *           type: integer
  *           minimum: 1
  *           maximum: 100
- *           default: 10
+ *           default: 20
  *         example: 20
  *     responses:
  *       200:
@@ -56,32 +65,16 @@ router.get('/search', async (req: express.Request, res: express.Response) => {
   try {
     const query = validateSearchQuery(req.query.query);
 
-    // Parse and validate result_num
-    let resultNum = 10;
-    if (req.query.result_num !== undefined) {
-      const parsed = parseInt(req.query.result_num as string, 10);
-      if (isNaN(parsed) || parsed < 1 || parsed > 100) {
-        return res.status(400).json({
-          error: 'Invalid result_num: must be an integer between 1 and 100',
-        });
-      }
-      resultNum = parsed;
-    }
+    // Pagination parameters
+    const page = Math.max(1, parseInt(req.query.page as string, 10) || 1);
+    const pageSize = Math.min(100, Math.max(1, parseInt(req.query.page_size as string, 10) || 20));
 
-    logger.info(`Searching for game: "${query}"`, {
-      query,
-      resultNum,
-      ip: req.ip,
-      requestId: req.get('x-request-id') || 'unknown',
-    });
-
+    // Always fetch the max allowed from price-fetcher (e.g., 100)
+    const fetchLimit = 100;
     const priceFetcherServiceUrl = process.env.PRICE_FETCHER_SERVICE_URL || 'http://price-fetcher:8000';
-    const searchUrl = `${priceFetcherServiceUrl}/game-ids?title=${encodeURIComponent(query)}&result_num=${resultNum}`;
+    const searchUrl = `${priceFetcherServiceUrl}/game-ids?title=${encodeURIComponent(query)}&result_num=${fetchLimit}`;
 
-    const response = await fetchWithErrorHandling(searchUrl, 'price-fetcher', { 
-      timeout: 15000 
-    });
-
+    const response = await fetchWithErrorHandling(searchUrl, 'price-fetcher', { timeout: 15000 });
     let data: PriceFetcherServiceResponse;
 
     try {
@@ -96,20 +89,22 @@ router.get('/search', async (req: express.Request, res: express.Response) => {
       throw new DataFormatError('Invalid JSON response from price fetcher service', 'JSON');
     }
 
-    const responseTime = Date.now() - startTime;
+    // Local pagination
+    const allResults = data.games || [];
+    const total = allResults.length;
+    const start = (page - 1) * pageSize;
+    const end = start + pageSize;
+    const pagedResults = allResults.slice(start, end);
 
-    logger.info(`Game search completed successfully`, {
-      query,
-      resultNum,
-      resultsCount: data.count || 0,
-      gamesFound: data.games?.length || 0,
-      responseTimeMs: responseTime,
-    });
+    const responseTime = Date.now() - startTime;
 
     res.status(200).json({
       query,
-      results: data.games || [],
-      count: data.count || 0,
+      results: pagedResults,
+      count: total,
+      page,
+      page_size: pageSize,
+      total_pages: Math.ceil(total / pageSize),
       timestamp: new Date().toISOString(),
       responseTime: `${responseTime}ms`,
     });
