@@ -52,6 +52,16 @@ services:
     networks:
       - john-network
 
+  tester:
+    image: curlimages/curl:latest
+    depends_on:
+      - api-gateway
+      - price-fetcher
+      - redis
+    networks:
+      - john-network
+    entrypoint: [ "sleep", "infinity" ] # So you can exec in for debugging, or override in CI
+
 networks:
   john-network:
     driver: bridge
