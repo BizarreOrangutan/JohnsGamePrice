@@ -217,6 +217,9 @@ jobs:
           echo ""
           echo "=== API Gateway logs ==="
           docker compose -f docker-compose.test.yml logs api-gateway
+          echo ""
+          echo "=== Redis logs ==="
+          docker compose -f docker-compose.test.yml logs redis
           
       - name: Test API endpoints
         timeout-minutes: 5
