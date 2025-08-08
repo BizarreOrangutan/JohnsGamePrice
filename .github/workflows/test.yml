@@ -14,10 +14,32 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Install bun
+        run: |
+          curl -fsSL https://bun.sh/install | bash
+          export BUN_INSTALL="$HOME/.bun"
+          export PATH="$BUN_INSTALL/bin:$PATH"
+          echo 'export BUN_INSTALL="$HOME/.bun"' >> $GITHUB_ENV
+          echo 'export PATH="$HOME/.bun/bin:$PATH"' >> $GITHUB_ENV
+
+      - name: Run unit tests (api-gateway)
+        working-directory: api-gateway
+        run: bun test
+
+      - name: Run unit tests (web)
+        working-directory: web
+        run: bun test
+
+      - name: Run unit tests (price-fetcher)
+        working-directory: price-fetcher
+        run: bun test
+
       - name: Set up KinD cluster
         uses: helm/kind-action@v1
 
       - name: Set up Helm
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         uses: azure/setup-helm@v3
 
       - name: Build Docker images
@@ -28,19 +50,23 @@ jobs:
 
       - name: Load images into KinD
         run: |
-          kind load docker-image johnsgameprice-api-gateway:latest
-          kind load docker-image johnsgameprice-price-fetcher:latest
-          kind load docker-image johnsgameprice-web:latest
+          kind load docker-image johnsgameprice-api-gateway:latest --name chart-testing
+          kind load docker-image johnsgameprice-price-fetcher:latest --name chart-testing
+          kind load docker-image johnsgameprice-web:latest --name chart-testing
 
       - name: Deploy stack with Helm and manifests
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ISTHEREANYDEAL_API_KEY: ${{ secrets.ISTHEREANYDEAL_API_KEY }}
         run: |
-          bash .deploy.sh
+          bash .deploy.test.sh
 
-      - name: Wait for deployments to be ready
+      - name: Wait for deployments and Redis to be ready
         run: |
           kubectl rollout status deployment/api-gateway -n default --timeout=120s
           kubectl rollout status deployment/price-fetcher -n default --timeout=120s
           kubectl rollout status deployment/web -n default --timeout=120s
+          kubectl rollout status statefulset/redis-master -n redis --timeout=120s
 
       - name: Port-forward API Gateway
         run: |
@@ -119,12 +145,6 @@ jobs:
           fi
           
           echo "🎉 All endpoint tests completed!"
-
-      - name: Run integration tests
-        env:
-          API_URL: http://localhost:8080
-        run: |
-          npm run test:integration
 
       - name: Show logs on failure
         if: failure()
