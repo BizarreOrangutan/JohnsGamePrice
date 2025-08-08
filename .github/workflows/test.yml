@@ -1,227 +1,57 @@
-name: Test JohnsGamePrice
+name: Kubernetes Integration Tests
 
-on: 
-  pull_request:
-    branches: [main]
+on:
   push:
     branches: [main]
+  pull_request:
+    branches: [main]
   workflow_dispatch:
-    inputs:
-      run_all_tests:
-        description: 'Run all tests regardless of file changes'
-        required: false
-        default: false
-        type: boolean
-  
+
 jobs:
-  changes:
-    runs-on: ubuntu-latest
-    outputs:
-      price-fetcher: ${{ steps.changes.outputs.price-fetcher }}
-      api-gateway: ${{ steps.changes.outputs.api-gateway }}
-      web: ${{ steps.changes.outputs.web }}
-      run-all: ${{ inputs.run_all_tests == true || contains(github.event.head_commit.message, '[test all]') }}
-    steps:
-      - uses: actions/checkout@v4
-      - uses: dorny/paths-filter@v2
-        id: changes
-        with:
-          filters: |
-            price-fetcher:
-              - 'price-fetcher/**'
-            api-gateway:
-              - 'api-gateway/**'
-            web:
-              - 'web/**'
-
-  test-price-fetcher:
-    runs-on: ubuntu-latest
-    needs: changes
-    if: ${{ needs.changes.outputs.price-fetcher == 'true' || needs.changes.outputs.run-all == 'true' }}
-    timeout-minutes: 10
-    steps:
-      - uses: actions/checkout@v4
-      
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-        
-      - name: Build Price Fetcher test image
-        run: |
-          docker build --target test -t price-fetcher:test ./price-fetcher
-          
-      - name: Run Price Fetcher tests
-        timeout-minutes: 5
-        run: |
-          docker run --rm \
-            -e API_KEY=test_api_key \
-            price-fetcher:test
-
-      - name: Build Price Fetcher runtime image
-        run: |
-          docker build --target runtime -t price-fetcher:runtime ./price-fetcher
-          
-      - name: Test Price Fetcher runtime health
-        timeout-minutes: 2
-        run: |
-          # Start the runtime container for health check
-          docker run -d --name price-fetcher-test \
-            -p 8000:8000 \
-            -e API_KEY=test_api_key \
-            price-fetcher:runtime
-          
-          # Wait for startup and test health endpoint
-          sleep 10
-          for i in {1..6}; do
-            if curl -f -s http://localhost:8000/health > /dev/null; then
-              echo "✅ Price fetcher health check passed"
-              break
-            fi
-            echo "Waiting for health check... ($i/6)"
-            sleep 5
-          done
-          
-          # Cleanup
-          docker stop price-fetcher-test
-          docker rm price-fetcher-test
-
-  test-api-gateway:
-    runs-on: ubuntu-latest
-    needs: changes
-    if: ${{ needs.changes.outputs.api-gateway == 'true' || needs.changes.outputs.run-all == 'true' }}
-    timeout-minutes: 10
-    steps:
-      - uses: actions/checkout@v4
-      
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-        
-      - name: Build API Gateway dev image
-        run: |
-          docker build --target dev -t api-gateway:test ./api-gateway
-          
-      - name: Start Redis for tests
-        run: |
-          docker run -d --name redis-test -p 6379:6379 redis:7
-
-      - name: Run API Gateway tests
-        timeout-minutes: 5
-        run: |
-          docker run --rm \
-            --entrypoint="" \
-            api-gateway:test \
-            bun test --timeout 30000
-
-      - name: Cleanup Redis after tests
-        if: always()
-        run: |
-          docker stop redis-test || true
-          docker rm redis-test || true
-
-      - name: Run API Gateway lint checks
-        if: success()
-        timeout-minutes: 2
-        run: |
-          docker run --rm \
-            --entrypoint="" \
-            api-gateway:test \
-            bun run lint
-
-      - name: Build API Gateway runtime image
-        run: |
-          docker build --target runtime -t api-gateway:runtime ./api-gateway
-
-  test-web:
-    runs-on: ubuntu-latest
-    needs: changes
-    if: ${{ needs.changes.outputs.web == 'true' || needs.changes.outputs.run-all == 'true' }}
-    timeout-minutes: 15
-    steps:
-      - uses: actions/checkout@v4
-      
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-        
-      - name: Build Web dev image
-        run: |
-          docker build --target dev -t web:test ./web
-          
-      - name: Run Web tests
-        timeout-minutes: 10
-        run: |
-          docker run --rm \
-            --entrypoint="" \
-            web:test \
-            bun test --timeout 30000
-
-      - name: Build Web production image
-        run: |
-          docker build --target runtime -t web:runtime ./web
-
   integration-tests:
     runs-on: ubuntu-latest
-    needs: [changes, test-price-fetcher, test-api-gateway]
-    if: always() && (needs.changes.outputs.price-fetcher == 'true' || needs.changes.outputs.api-gateway == 'true' || needs.changes.outputs.run-all == 'true')
-    timeout-minutes: 20
+    timeout-minutes: 40
     steps:
       - uses: actions/checkout@v4
-      
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-        
-      - name: Create test environment file
+
+      - name: Set up KinD cluster
+        uses: helm/kind-action@v1
+
+      - name: Set up Helm
+        uses: azure/setup-helm@v3
+
+      - name: Build Docker images
         run: |
-          echo "API_KEY=${{ secrets.ISTHEREANYDEAL_API_KEY || 'test_api_key' }}" > .env
-          
-      - name: Start services with Docker Compose
+          docker build -t johnsgameprice-api-gateway:latest ./api-gateway
+          docker build -t johnsgameprice-price-fetcher:latest ./price-fetcher
+          docker build -t johnsgameprice-web:latest ./web
+
+      - name: Load images into KinD
         run: |
-          docker compose -f docker-compose.test.yml up -d
-          
-      - name: Wait for services to be ready
-        timeout-minutes: 10
+          kind load docker-image johnsgameprice-api-gateway:latest
+          kind load docker-image johnsgameprice-price-fetcher:latest
+          kind load docker-image johnsgameprice-web:latest
+
+      - name: Deploy stack with Helm and manifests
         run: |
-          echo "Waiting for services to start..."
-          
-          # Check if containers are running
-          docker compose -f docker-compose.test.yml ps
-          
-          # Wait for price-fetcher first (it's simpler)
-          echo "Testing price-fetcher connectivity..."
-          for i in {1..20}; do
-            if curl -f -s http://localhost:8000/health > /dev/null 2>&1; then
-              echo "✅ price-fetcher is responding"
-              break
-            fi
-            echo "Waiting for price-fetcher... ($i/20)"
-            sleep 10
-          done
-          
-          # Wait for api-gateway (depends on price-fetcher)
-          echo "Testing api-gateway connectivity..."
-          for i in {1..24}; do
-            if curl -f -s http://localhost:8080/health > /dev/null 2>&1; then
-              echo "✅ api-gateway is responding"
-              break
-            fi
-            echo "Waiting for api-gateway... ($i/24)"
-            sleep 15
-          done
-          
-      - name: Show service status on failure
+          bash .deploy.sh
+
+      - name: Wait for deployments to be ready
         run: |
-          echo "=== Docker Compose Services ==="
-          docker compose -f docker-compose.test.yml ps
-          echo ""
-          echo "=== Price Fetcher logs ==="
-          docker compose -f docker-compose.test.yml logs price-fetcher
-          echo ""
-          echo "=== API Gateway logs ==="
-          docker compose -f docker-compose.test.yml logs api-gateway
-          echo ""
-          echo "=== Redis logs ==="
-          docker compose -f docker-compose.test.yml logs redis
+          kubectl rollout status deployment/api-gateway -n default --timeout=120s
+          kubectl rollout status deployment/price-fetcher -n default --timeout=120s
+          kubectl rollout status deployment/web -n default --timeout=120s
+
+      - name: Port-forward API Gateway
+        run: |
+          kubectl port-forward svc/api-gateway 8080:8080 &
+          kubectl port-forward svc/price-fetcher 8000:8000 &
+          sleep 10
 
       - name: Test API endpoints
         timeout-minutes: 5
+        env:
+          ISTHEREANYDEAL_API_KEY: ${{ secrets.ISTHEREANYDEAL_API_KEY }}
         run: |
           echo "🧪 Testing API Endpoints"
           echo "========================"
@@ -256,7 +86,7 @@ jobs:
           
           # Test api-gateway games search endpoint (only if real API key is available)
           echo "Testing api-gateway games search endpoint..."
-          if [ "${{ secrets.ISTHEREANYDEAL_API_KEY }}" != "" ]; then
+          if [ "$ISTHEREANYDEAL_API_KEY" != "" ]; then
             if curl -f -s "http://localhost:8080/api/games/search?query=test" > /dev/null; then
               echo "✅ Games search endpoint passed"
             else
@@ -269,7 +99,7 @@ jobs:
           
           # Test api-gateway games search endpoint with result_num
           echo "Testing api-gateway games search endpoint with result_num..."
-          if [ "${{ secrets.ISTHEREANYDEAL_API_KEY }}" != "" ]; then
+          if [ "$ISTHEREANYDEAL_API_KEY" != "" ]; then
             if curl -f -s "http://localhost:8080/api/games/search?query=test&result_num=15" > /dev/null; then
               echo "✅ Games search endpoint with result_num passed"
             else
@@ -289,55 +119,23 @@ jobs:
           fi
           
           echo "🎉 All endpoint tests completed!"
-          
-      - name: Show final service status
-        if: always()
-        run: |
-          echo "=== Final Service Status ==="
-          docker compose -f docker-compose.test.yml ps
-          
-      - name: Cleanup services
-        if: always()
-        run: |
-          docker compose -f docker-compose.test.yml down -v
 
-  build-verification:
-    runs-on: ubuntu-latest
-    needs: [test-price-fetcher, test-api-gateway, test-web, integration-tests]
-    if: always()
-    steps:
-      - name: Verify all tests passed
+      - name: Run integration tests
+        env:
+          API_URL: http://localhost:8080
         run: |
-          echo "🔍 Test Results Summary"
-          echo "======================="
-          echo "Price Fetcher Tests: ${{ needs.test-price-fetcher.result }}"
-          echo "API Gateway Tests: ${{ needs.test-api-gateway.result }}"
-          echo "Web Tests: ${{ needs.test-web.result }}"
-          echo "Integration Tests: ${{ needs.integration-tests.result }}"
-          echo ""
-          
-          # Check if any required tests failed (skip if they were skipped)
-          failed_tests=()
-          
-          if [[ "${{ needs.test-price-fetcher.result }}" == "failure" ]]; then
-            failed_tests+=("Price Fetcher")
-          fi
-          
-          if [[ "${{ needs.test-api-gateway.result }}" == "failure" ]]; then
-            failed_tests+=("API Gateway")
-          fi
-          
-          if [[ "${{ needs.test-web.result }}" == "failure" ]]; then
-            failed_tests+=("Web")
-          fi
-          
-          if [[ "${{ needs.integration-tests.result }}" == "failure" ]]; then
-            failed_tests+=("Integration")
-          fi
-          
-          if [ ${#failed_tests[@]} -gt 0 ]; then
-            echo "❌ Failed tests: ${failed_tests[*]}"
-            exit 1
-          else
-            echo "✅ All tests completed successfully"
-          fi
+          npm run test:integration
+
+      - name: Show logs on failure
+        if: failure()
+        run: |
+          kubectl get pods -A
+          kubectl logs deployment/api-gateway || true
+          kubectl logs deployment/price-fetcher || true
+          kubectl logs deployment/web || true
+
+      - name: Clean up
+        if: always()
+        run: |
+          kubectl delete namespace monitoring --ignore-not-found
+          kubectl delete namespace redis --ignore-not-found
