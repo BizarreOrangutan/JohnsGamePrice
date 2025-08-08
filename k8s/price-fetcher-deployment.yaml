@@ -1,0 +1,28 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: price-fetcher
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: price-fetcher
+  template:
+    metadata:
+      labels:
+        app: price-fetcher
+    spec:
+      containers:
+        - name: price-fetcher
+          image: johnsgameprice-price-fetcher:latest
+          imagePullPolicy: Never
+          ports:
+            - containerPort: 8000
+          env:
+            - name: PORT  
+              value: "8000"
+            - name: API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: price-fetcher-secret
+                  key: API_KEY
