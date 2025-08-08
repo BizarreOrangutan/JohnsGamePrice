@@ -15,7 +15,7 @@ spec:
       containers:
         - name: price-fetcher
           image: johnsgameprice-price-fetcher:latest
-          imagePullPolicy: Never
+          imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8000
           env:

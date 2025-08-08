@@ -15,7 +15,7 @@ spec:
       containers:
         - name: api-gateway
           image: johnsgameprice-api-gateway:latest
-          imagePullPolicy: Never
+          imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8080
           env:
@@ -31,4 +31,4 @@ spec:
                   name: redis
                   key: redis-password
             - name: REDIS_HOST
-              value: "redis-master.redis.svc.cluster.local"
+              value: "redis-master.default.svc.cluster.local"

@@ -1,0 +1,86 @@
+name: Integration Tests
+
+on:
+  workflow_run:
+    workflows: ["Unit Tests"]
+    types:
+      - completed
+
+jobs:
+  integration:
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up KinD cluster
+        uses: helm/kind-action@v1
+
+      - name: Set up Helm
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        uses: azure/setup-helm@v3
+
+      - name: Create price-fetcher-secret
+        run: |
+          kubectl create secret generic price-fetcher-secret --from-literal=API_KEY=${{ secrets.ISTHEREANYDEAL_API_KEY }} --namespace=default
+
+      - name: Deploy stack
+        run: bash .deploy.test.sh
+
+      - name: Build Docker images
+        run: |
+          docker build -t johnsgameprice-api-gateway:latest ./api-gateway
+          docker build -t johnsgameprice-price-fetcher:latest ./price-fetcher
+          docker build -t johnsgameprice-web:latest ./web
+
+      - name: Load images into KinD
+        run: |
+          kind load docker-image johnsgameprice-api-gateway:latest --name chart-testing
+          kind load docker-image johnsgameprice-price-fetcher:latest --name chart-testing
+          kind load docker-image johnsgameprice-web:latest --name chart-testing
+
+      - name: Wait for deployments to be ready
+        run: |
+          set -e
+
+          wait_and_log() {
+            local kind="$1"
+            local name="$2"
+            local ns="$3"
+            local timeout="${4:-120s}"
+
+            echo "⏳ Waiting for $kind/$name in namespace $ns to be ready..."
+            if ! kubectl rollout status $kind/$name -n $ns --timeout=$timeout; then
+              echo "❌ Timeout waiting for $kind/$name in $ns. Fetching pod logs:"
+              kubectl get pods -n $ns -o wide
+              for pod in $(kubectl get pods -n $ns -l app=${name} -o jsonpath="{.items[*].metadata.name}"); do
+                echo "---- Logs for pod $pod ----"
+                kubectl logs -n $ns $pod || true
+              done
+              exit 1
+            fi
+          }
+
+          wait_and_log deployment api-gateway default 120s
+          wait_and_log deployment price-fetcher default 120s
+          wait_and_log deployment web default 120s
+
+      - name: Integration Tests
+        env:
+          USE_KIND: "true"
+        run: bash integration_test.sh
+
+      - name: Show logs on failure
+        if: failure()
+        run: |
+          kubectl get pods -A
+          kubectl logs deployment/api-gateway || true
+          kubectl logs deployment/price-fetcher || true
+          kubectl logs deployment/web || true
+
+      - name: Clean up
+        if: always()
+        run: |
+          kubectl delete namespace monitoring --ignore-not-found
+          kubectl delete namespace redis --ignore-not-found
