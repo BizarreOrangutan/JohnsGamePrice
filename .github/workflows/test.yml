@@ -36,13 +36,21 @@ jobs:
         working-directory: web
         run: bun test
 
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
       - name: Install dependencies (price-fetcher)
         working-directory: price-fetcher
-        run: bun install
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install -r requirements-dev.txt
 
       - name: Run unit tests (price-fetcher)
         working-directory: price-fetcher
-        run: bun test
+        run: pytest
 
       - name: Set up KinD cluster
         uses: helm/kind-action@v1
