@@ -1,0 +1,75 @@
+name: Integration Tests
+
+on:
+  workflow_run:
+    workflows: ["Unit Tests"]
+    types:
+      - completed
+
+jobs:
+  integration:
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up KinD cluster
+        uses: helm/kind-action@v1
+
+      - name: Set up Helm
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        uses: azure/setup-helm@v3
+
+      - name: Build Docker images
+        run: |
+          docker build -t johnsgameprice-api-gateway:latest ./api-gateway
+          docker build -t johnsgameprice-price-fetcher:latest ./price-fetcher
+          docker build -t johnsgameprice-web:latest ./web
+
+      - name: Load images into KinD
+        run: |
+          kind load docker-image johnsgameprice-api-gateway:latest --name chart-testing
+          kind load docker-image johnsgameprice-price-fetcher:latest --name chart-testing
+          kind load docker-image johnsgameprice-web:latest --name chart-testing
+
+      - name: Deploy stack with Helm and manifests
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ISTHEREANYDEAL_API_KEY: ${{ secrets.ISTHEREANYDEAL_API_KEY }}
+        run: bash .deploy.test.sh
+
+      - name: Wait for deployments and Redis to be ready
+        run: |
+          kubectl rollout status deployment/api-gateway -n default --timeout=120s
+          kubectl rollout status deployment/price-fetcher -n default --timeout=120s
+          kubectl rollout status deployment/web -n default --timeout=120s
+          kubectl rollout status statefulset/redis-master -n redis --timeout=120s
+
+      - name: Port-forward API Gateway
+        run: |
+          kubectl port-forward svc/api-gateway 8080:8080 &
+          kubectl port-forward svc/price-fetcher 8000:8000 &
+          sleep 10
+
+      - name: Test API endpoints
+        timeout-minutes: 5
+        env:
+          ISTHEREANYDEAL_API_KEY: ${{ secrets.ISTHEREANYDEAL_API_KEY }}
+        run: |
+          echo "🧪 Testing API Endpoints"
+          # ... your test script as before ...
+
+      - name: Show logs on failure
+        if: failure()
+        run: |
+          kubectl get pods -A
+          kubectl logs deployment/api-gateway || true
+          kubectl logs deployment/price-fetcher || true
+          kubectl logs deployment/web || true
+
+      - name: Clean up
+        if: always()
+        run: |
+          kubectl delete namespace monitoring --ignore-not-found
+          kubectl delete namespace redis --ignore-not-found
