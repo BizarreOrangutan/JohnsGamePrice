@@ -58,4 +58,4 @@ jobs:
         working-directory: price-fetcher
         env:
           API_KEY: dummyapikey
-        run: pytest
+        run: python -m pytest
