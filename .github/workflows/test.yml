@@ -20,13 +20,25 @@ jobs:
           echo "BUN_INSTALL=$HOME/.bun" >> $GITHUB_ENV
           echo "PATH=$HOME/.bun/bin:$PATH" >> $GITHUB_ENV
 
+      - name: Install dependencies (api-gateway)
+        working-directory: api-gateway
+        run: bun install
+
       - name: Run unit tests (api-gateway)
         working-directory: api-gateway
         run: bun test
 
+      - name: Install dependencies (web)
+        working-directory: web
+        run: bun install
+
       - name: Run unit tests (web)
         working-directory: web
         run: bun test
+
+      - name: Install dependencies (price-fetcher)
+        working-directory: price-fetcher
+        run: bun install
 
       - name: Run unit tests (price-fetcher)
         working-directory: price-fetcher
