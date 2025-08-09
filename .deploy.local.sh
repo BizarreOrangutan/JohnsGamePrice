@@ -12,4 +12,4 @@ docker build -t johnsgameprice-web:latest ./web
 
 bash .deploy.test.sh
 
-echo "✅ All images built, Helm charts deployed, and manifests applied
+echo "✅ All images built, Helm charts deployed, and manifests applied"

@@ -52,20 +52,8 @@ jobs:
           kubectl port-forward svc/price-fetcher 8000:8000 &
           sleep 10
 
-      - name: Test API endpoints
-        timeout-minutes: 5
-        run: |
-          echo "🧪 Testing API Gateway root"
-          curl -f http://localhost:8080/ || exit 1
-
-          echo "🧪 Testing API Gateway search endpoint (should return 400 or 200)"
-          curl -s -o /dev/null -w "%{http_code}" "http://localhost:8080/api/games/search?query=portal" | grep -E "200|400"
-
-          echo "🧪 Testing Price Fetcher health"
-          curl -f http://localhost:8000/health || exit 1
-
-          echo "🧪 Testing Price Fetcher game-ids"
-          curl -f "http://localhost:8000/game-ids?title=portal" || exit 1
+      - name: Integration Tests
+        run: bash integration_test.sh
 
       - name: Show logs on failure
         if: failure()

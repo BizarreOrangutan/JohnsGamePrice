@@ -12,4 +12,23 @@ redisClient.on('error', (err) => {
   console.error('Redis Client Error', err);
 });
 
-redisClient.connect().catch(console.error);
+// Retry logic
+const MAX_RETRIES = 10;
+const RETRY_DELAY_MS = 2000;
+
+async function connectWithRetry(retries = 0) {
+  try {
+    await redisClient.connect();
+    console.log('Connected to Redis');
+  } catch (err) {
+    if (retries < MAX_RETRIES) {
+      console.warn(`Redis connection failed. Retrying in ${RETRY_DELAY_MS / 1000}s... (${retries + 1}/${MAX_RETRIES})`);
+      setTimeout(() => connectWithRetry(retries + 1), RETRY_DELAY_MS);
+    } else {
+      console.error('Max Redis connection retries reached. Exiting.');
+      process.exit(1);
+    }
+  }
+}
+
+connectWithRetry();
