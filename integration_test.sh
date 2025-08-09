@@ -21,7 +21,7 @@ else
 fi
 
 # Only run minikube docker-env locally
-if command -v minikube &> /dev/null; then
+if [[ "${USE_KIND:-}" != "true" ]] && command -v minikube &> /dev/null; then
   eval $(minikube docker-env)
 fi
 
@@ -31,10 +31,21 @@ docker build -t johnsgameprice-price-fetcher:latest ./price-fetcher
 docker build -t johnsgameprice-web:latest ./web
 echo "✅ Docker images built."
 
-# If using KinD, load images (uncomment in CI)
-# kind load docker-image johnsgameprice-api-gateway:latest --name chart-testing
-# kind load docker-image johnsgameprice-price-fetcher:latest --name chart-testing
-# kind load docker-image johnsgameprice-web:latest --name chart-testing
+# Use KinD image loading if USE_KIND is set
+if [[ "${USE_KIND:-}" == "true" ]]; then
+  echo "🔄 Loading images into KinD..."
+  kind load docker-image johnsgameprice-api-gateway:latest --name chart-testing
+  kind load docker-image johnsgameprice-price-fetcher:latest --name chart-testing
+  kind load docker-image johnsgameprice-web:latest --name chart-testing
+  echo "✅ Images loaded into KinD."
+fi
+
+# Ensure Redis password secret is available in default namespace for api-gateway
+if kubectl get secret redis --namespace=redis &>/dev/null; then
+  REDIS_PASSWORD=$(kubectl get secret redis --namespace=redis -o jsonpath="{.data.redis-password}" | base64 --decode)
+  kubectl delete secret redis --namespace=default --ignore-not-found
+  kubectl create secret generic redis --from-literal=redis-password="$REDIS_PASSWORD" --namespace=default
+fi
 
 echo "📦 Deploying stack..."
 bash .deploy.test.sh

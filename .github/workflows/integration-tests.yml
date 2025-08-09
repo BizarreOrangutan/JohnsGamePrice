@@ -21,22 +21,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         uses: azure/setup-helm@v3
 
-      - name: Build Docker images
-        run: |
-          docker build -t johnsgameprice-api-gateway:latest ./api-gateway
-          docker build -t johnsgameprice-price-fetcher:latest ./price-fetcher
-          docker build -t johnsgameprice-web:latest ./web
-
-      - name: Load images into KinD
-        run: |
-          kind load docker-image johnsgameprice-api-gateway:latest --name chart-testing
-          kind load docker-image johnsgameprice-price-fetcher:latest --name chart-testing
-          kind load docker-image johnsgameprice-web:latest --name chart-testing
-
-      - name: Deploy stack with Helm and manifests
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          ISTHEREANYDEAL_API_KEY: ${{ secrets.ISTHEREANYDEAL_API_KEY }}
+      - name: Deploy stack
         run: bash .deploy.test.sh
 
       - name: Wait for deployments and Redis to be ready
@@ -46,13 +31,9 @@ jobs:
           kubectl rollout status deployment/web -n default --timeout=120s
           kubectl rollout status statefulset/redis-master -n redis --timeout=120s
 
-      - name: Port-forward API Gateway
-        run: |
-          kubectl port-forward svc/api-gateway 8080:8080 &
-          kubectl port-forward svc/price-fetcher 8000:8000 &
-          sleep 10
-
       - name: Integration Tests
+        env:
+          USE_KIND: "true"
         run: bash integration_test.sh
 
       - name: Show logs on failure
