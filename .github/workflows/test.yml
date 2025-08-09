@@ -59,9 +59,9 @@ jobs:
       - name: Run unit tests
         working-directory: price-fetcher
         env:
-          PYTHONPATH: src
           API_KEY: dummyapikey
         run: pytest
+        
 
   build-and-deploy:
     runs-on: ubuntu-latest
