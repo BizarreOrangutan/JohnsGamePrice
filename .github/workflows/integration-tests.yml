@@ -54,11 +54,18 @@ jobs:
 
       - name: Test API endpoints
         timeout-minutes: 5
-        env:
-          ISTHEREANYDEAL_API_KEY: ${{ secrets.ISTHEREANYDEAL_API_KEY }}
         run: |
-          echo "🧪 Testing API Endpoints"
-          # ... your test script as before ...
+          echo "🧪 Testing API Gateway root"
+          curl -f http://localhost:8080/ || exit 1
+
+          echo "🧪 Testing API Gateway search endpoint (should return 400 or 200)"
+          curl -s -o /dev/null -w "%{http_code}" "http://localhost:8080/api/games/search?query=portal" | grep -E "200|400"
+
+          echo "🧪 Testing Price Fetcher health"
+          curl -f http://localhost:8000/health || exit 1
+
+          echo "🧪 Testing Price Fetcher game-ids"
+          curl -f "http://localhost:8000/game-ids?title=portal" || exit 1
 
       - name: Show logs on failure
         if: failure()
