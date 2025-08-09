@@ -7,9 +7,6 @@ if [ -f .env ]; then
   export $(grep -v '^#' .env | xargs)
 fi
 
-kubectl delete secret price-fetcher-secret --namespace=default || true
-kubectl create secret generic price-fetcher-secret --from-literal=API_KEY="${API_KEY}" --namespace=default
-
 # Create monitoring namespace if it doesn't exist
 kubectl get namespace monitoring >/dev/null 2>&1 || kubectl create namespace monitoring
 

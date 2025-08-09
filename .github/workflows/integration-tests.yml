@@ -21,15 +21,39 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         uses: azure/setup-helm@v3
 
+      - name: Create price-fetcher-secret
+        run: |
+          kubectl create secret generic price-fetcher-secret --from-literal=API_KEY=${{ secrets.ISTHEREANYDEAL_API_KEY }} --namespace=default
+
       - name: Deploy stack
         run: bash .deploy.test.sh
 
       - name: Wait for deployments and Redis to be ready
         run: |
-          kubectl rollout status deployment/api-gateway -n default --timeout=120s
-          kubectl rollout status deployment/price-fetcher -n default --timeout=120s
-          kubectl rollout status deployment/web -n default --timeout=120s
-          kubectl rollout status statefulset/redis-master -n redis --timeout=120s
+          set -e
+
+          wait_and_log() {
+            local kind="$1"
+            local name="$2"
+            local ns="$3"
+            local timeout="${4:-120s}"
+
+            echo "⏳ Waiting for $kind/$name in namespace $ns to be ready..."
+            if ! kubectl rollout status $kind/$name -n $ns --timeout=$timeout; then
+              echo "❌ Timeout waiting for $kind/$name in $ns. Fetching pod logs:"
+              kubectl get pods -n $ns -o wide
+              for pod in $(kubectl get pods -n $ns -l app=${name} -o jsonpath="{.items[*].metadata.name}"); do
+                echo "---- Logs for pod $pod ----"
+                kubectl logs -n $ns $pod || true
+              done
+              exit 1
+            fi
+          }
+
+          wait_and_log deployment api-gateway default 120s
+          wait_and_log deployment price-fetcher default 120s
+          wait_and_log deployment web default 120s
+          wait_and_log statefulset redis-master redis 120s
 
       - name: Integration Tests
         env:
