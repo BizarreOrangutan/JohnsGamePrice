@@ -4,6 +4,19 @@ A modern, microservices-based game price comparison platform that helps users fi
 
 ---
 
+## 🎬 Demo Videos (~10-20 secs each)
+
+- **Kubernetes & Helm Deployment:**  
+  [![Kubernetes & Helm Deployment](https://img.youtube.com/vi/v-vjEqX9jUE/0.jpg)](https://youtu.be/v-vjEqX9jUE)
+- **Integration Test Run:**  
+  [![Integration Test Demo](https://img.youtube.com/vi/X9teUze1XmY/0.jpg)](https://youtu.be/X9teUze1XmY)
+- **Grafana & Loki Log Monitoring:**  
+  [![Grafana & Loki Demo](https://img.youtube.com/vi/lJPa0Fr9G2o/0.jpg)](https://youtu.be/lJPa0Fr9G2o)
+- **Frontend Live Search:**  
+  [![Frontend Live Search](https://img.youtube.com/vi/GytnT7mRk2Q/0.jpg)](https://youtu.be/GytnT7mRk2Q)
+
+---
+
 ## 🚀 Features
 
 - **Real-time Game Search**: Autocomplete search with game images and metadata
