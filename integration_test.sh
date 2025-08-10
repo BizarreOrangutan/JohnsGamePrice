@@ -34,6 +34,17 @@ if [[ "${USE_KIND:-}" != "true" ]]; then
   echo "✅ Docker images built."
 fi
 
+if [[ "${USE_KIND:-}" != "true" && "${CI:-}" != "true" ]]; then
+  # Only run locally, not in CI
+  if ! kubectl get secret price-fetcher-secret --namespace=default &>/dev/null; then
+    echo "Creating price-fetcher-secret from .env"
+    source .env
+    kubectl create secret generic price-fetcher-secret --from-literal=API_KEY="$API_KEY" --namespace=default
+  else
+    echo "price-fetcher-secret already exists, skipping creation."
+  fi
+fi
+
 echo "📦 Deploying stack..."
 bash .deploy.test.sh
 echo "✅ Stack deployed."
