@@ -1,0 +1,24 @@
+defaultRules:
+  create: true
+
+prometheus:
+  service:
+    type: NodePort
+    nodePort: 30900  
+
+grafana:
+  enabled: false 
+
+server:
+  retention: 12h
+
+alertmanager:
+  enabled: false
+
+resources:
+  requests:
+    cpu: 50m
+    memory: 128Mi
+  limits:
+    cpu: 200m
+    memory: 512Mi

@@ -2,11 +2,13 @@ from fastapi import FastAPI, Query, HTTPException
 from fastapi.responses import JSONResponse
 from src.logger import get_logger
 from src.itad_client import ITADClient
+from src.prometheus_client import endpoint_duration, start_metrics_server
 import os
 import logging
 from dotenv import load_dotenv
 
 load_dotenv()
+start_metrics_server()
 
 logging.basicConfig(level=logging.INFO)
 logger = get_logger()
@@ -38,97 +40,99 @@ async def get_game(
     title: str = Query(..., description="Game title to search", min_length=1, max_length=100),
     result_num: int = Query(20, description="Number of results to return", ge=1, le=100)
 ):
-    try:
-        # Validate input
-        if not title.strip():
-            raise HTTPException(status_code=400, detail="Game title cannot be empty")
+    with endpoint_duration.labels(endpoint="/game-ids").time():
+        try:
+            # Validate input
+            if not title.strip():
+                raise HTTPException(status_code=400, detail="Game title cannot be empty")
+            
+            logger.info(f"Searching for game: {title} with {result_num} results")
+            
+            games = itad.search_game(title.strip(), result_num)
+            
+            if games is None:
+                raise HTTPException(
+                    status_code=503, 
+                    detail="External API unavailable. Please try again later."
+                )
+            
+            results = []
+            if isinstance(games, dict):
+                results = games.get("data", {}).get("results", [])
+            elif isinstance(games, list):
+                results = games
+            else:
+                logger.error(f"Unexpected response format from ITAD: {type(games)}")
+                raise HTTPException(status_code=500, detail="Unexpected response format")
+            
+            if not results:
+                return {"games": [], "message": f"No games found for '{title}'", "count": 0}
+            
+            logger.info(f"Found {len(results)} games for '{title}'")
+            return {"games": games, "count": len(results)}
         
-        logger.info(f"Searching for game: {title} with {result_num} results")
-        
-        games = itad.search_game(title.strip(), result_num)
-        
-        if games is None:
-            raise HTTPException(
-                status_code=503, 
-                detail="External API unavailable. Please try again later."
-            )
-        
-        results = []
-        if isinstance(games, dict):
-            results = games.get("data", {}).get("results", [])
-        elif isinstance(games, list):
-            results = games
-        else:
-            logger.error(f"Unexpected response format from ITAD: {type(games)}")
-            raise HTTPException(status_code=500, detail="Unexpected response format")
-        
-        if not results:
-            return {"games": [], "message": f"No games found for '{title}'", "count": 0}
-        
-        logger.info(f"Found {len(results)} games for '{title}'")
-        return {"games": games, "count": len(results)}
-    
-    except HTTPException:
-        # Re-raise HTTP exceptions
-        raise
-    except ValueError as e:
-        logger.error(f"Validation error: {e}")
-        raise HTTPException(status_code=400, detail=f"Invalid input: {str(e)}")
-    except ConnectionError as e:
-        logger.error(f"Connection error: {e}")
-        raise HTTPException(status_code=503, detail="Unable to connect to external service")
-    except TimeoutError as e:
-        logger.error(f"Timeout error: {e}")
-        raise HTTPException(status_code=504, detail="Request timed out")
-    except Exception as e:
-        logger.error(f"Unexpected error in get_game: {e}")
-        logger.error(f"Response type: {type(games)}, Response: {games}")  # Debug info
-        raise HTTPException(status_code=500, detail="Internal server error")
+        except HTTPException:
+            # Re-raise HTTP exceptions
+            raise
+        except ValueError as e:
+            logger.error(f"Validation error: {e}")
+            raise HTTPException(status_code=400, detail=f"Invalid input: {str(e)}")
+        except ConnectionError as e:
+            logger.error(f"Connection error: {e}")
+            raise HTTPException(status_code=503, detail="Unable to connect to external service")
+        except TimeoutError as e:
+            logger.error(f"Timeout error: {e}")
+            raise HTTPException(status_code=504, detail="Request timed out")
+        except Exception as e:
+            logger.error(f"Unexpected error in get_game: {e}")
+            logger.error(f"Response type: {type(games)}, Response: {games}")  # Debug info
+            raise HTTPException(status_code=500, detail="Internal server error")
     
 @app.get("/prices")
 async def get_prices(
     id: list[str] = Query(..., description="Ids of the games we want prices of", min_length=1),
     country: str = Query("US", description="Country code as a two character string", max_length=2),
 ):
-    try:
-        # Validate id
-        if len(id) == 0:
-            raise HTTPException(status_code=400, detail="Game id cannot be empty")
-        
-        # Validate country code if provided
-        if country and len(country) != 2:
-            raise HTTPException(status_code=400, detail="Country code must be 2 characters")
+    with endpoint_duration.labels(endpoint="/prices").time():
+        try:
+            # Validate id
+            if len(id) == 0:
+                raise HTTPException(status_code=400, detail="Game id cannot be empty")
+            
+            # Validate country code if provided
+            if country and len(country) != 2:
+                raise HTTPException(status_code=400, detail="Country code must be 2 characters")
 
-        logger.info(f"Fetching prices for game with ID: {id}")
+            logger.info(f"Fetching prices for game with ID: {id}")
 
-        # Handle optional parameters - use defaults if not provided
-        country_code = country.strip() if country else "GB"
+            # Handle optional parameters - use defaults if not provided
+            country_code = country.strip() if country else "GB"
 
-        prices = itad.prices(id, country_code)
+            prices = itad.prices(id, country_code)
 
-        if prices is None:
-            raise HTTPException(
-                status_code=503, 
-                detail="External API unavailable. Please try again later."
-            )         
-        
-        return(prices)
+            if prices is None:
+                raise HTTPException(
+                    status_code=503, 
+                    detail="External API unavailable. Please try again later."
+                )         
+            
+            return(prices)
 
-    except HTTPException:
-        raise
-    except ValueError as e:
-        logger.error(f"Validation error: {e}")
-        raise HTTPException(status_code=400, detail=f"Invalid input: {str(e)}")
-    except ConnectionError as e:
-        logger.error(f"Connection error: {e}")
-        raise HTTPException(status_code=503, detail="Unable to connect to external service")
-    except TimeoutError as e:
-        logger.error(f"Timeout error: {e}")
-        raise HTTPException(status_code=504, detail="Request timed out")
-    except Exception as e:
-        logger.error(f"Unexpected error in get_prices: {e}")
-        logger.error(f"Response type: {type(id)}, Response: {id}")
-        raise HTTPException(status_code=500, detail="Internal server error")
+        except HTTPException:
+            raise
+        except ValueError as e:
+            logger.error(f"Validation error: {e}")
+            raise HTTPException(status_code=400, detail=f"Invalid input: {str(e)}")
+        except ConnectionError as e:
+            logger.error(f"Connection error: {e}")
+            raise HTTPException(status_code=503, detail="Unable to connect to external service")
+        except TimeoutError as e:
+            logger.error(f"Timeout error: {e}")
+            raise HTTPException(status_code=504, detail="Request timed out")
+        except Exception as e:
+            logger.error(f"Unexpected error in get_prices: {e}")
+            logger.error(f"Response type: {type(id)}, Response: {id}")
+            raise HTTPException(status_code=500, detail="Internal server error")
     
 @app.get("/health")
 async def health_check():

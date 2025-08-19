@@ -2,11 +2,15 @@ apiVersion: v1
 kind: Service
 metadata:
   name: price-fetcher
+  labels:
+    app: price-fetcher
 spec:
   selector:
     app: price-fetcher
   ports:
-    - protocol: TCP
+    - name: http
       port: 8000
-      targetPort: 8000  
-  type: ClusterIP
+      targetPort: 8000
+    - name: metrics
+      port: 8001
+      targetPort: 8001
