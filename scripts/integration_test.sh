@@ -28,9 +28,9 @@ fi
 # Only build Docker images locally (not in CI)
 if [[ "${USE_KIND:-}" != "true" ]]; then
   echo "🚀 Building Docker images..."
-  docker build -t johnsgameprice-api-gateway:latest ./api-gateway &
-  docker build -t johnsgameprice-price-fetcher:latest ./price-fetcher &
-  docker build -t johnsgameprice-web:latest ./web &
+  docker build -t johnsgameprice-api-gateway:latest ./services/api-gateway &
+  docker build -t johnsgameprice-price-fetcher:latest ./services/price-fetcher &
+  docker build -t johnsgameprice-web:latest ./services/web &
   wait
   echo "✅ Docker images built."
 fi
@@ -47,7 +47,7 @@ if [[ "${USE_KIND:-}" != "true" && "${CI:-}" != "true" ]]; then
 fi
 
 echo "📦 Deploying stack..."
-bash deploy.sh
+bash scripts/deploy.sh
 echo "✅ Stack deployed."
 
 echo "🔗 Starting port-forwards..."

@@ -18,10 +18,10 @@ jobs:
           echo "BUN_INSTALL=$HOME/.bun" >> $GITHUB_ENV
           echo "PATH=$HOME/.bun/bin:$PATH" >> $GITHUB_ENV
       - name: Install dependencies
-        working-directory: api-gateway
+        working-directory: services/api-gateway
         run: bun install
       - name: Run unit tests
-        working-directory: api-gateway
+        working-directory: services/api-gateway
         run: bun test
 
   web:
@@ -34,10 +34,10 @@ jobs:
           echo "BUN_INSTALL=$HOME/.bun" >> $GITHUB_ENV
           echo "PATH=$HOME/.bun/bin:$PATH" >> $GITHUB_ENV
       - name: Install dependencies
-        working-directory: web
+        working-directory: services/web
         run: bun install
       - name: Run unit tests
-        working-directory: web
+        working-directory: services/web
         run: bun test
 
   price-fetcher:
@@ -49,13 +49,13 @@ jobs:
         with:
           python-version: '3.11'
       - name: Install dependencies
-        working-directory: price-fetcher
+        working-directory: services/price-fetcher
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
           pip install -r requirements-dev.txt
       - name: Run unit tests
-        working-directory: price-fetcher
+        working-directory: services/price-fetcher
         env:
           API_KEY: dummyapikey
         run: python -m pytest

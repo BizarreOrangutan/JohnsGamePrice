@@ -25,20 +25,20 @@ jobs:
         run: |
           kubectl create secret generic price-fetcher-secret --from-literal=API_KEY=${{ secrets.ISTHEREANYDEAL_API_KEY }} --namespace=default --dry-run=client -o yaml | kubectl apply -f -
 
-      - name: Deploy stack
-        run: bash deploy.sh
-
       - name: Build Docker images
         run: |
-          docker build -t johnsgameprice-api-gateway:latest ./api-gateway
-          docker build -t johnsgameprice-price-fetcher:latest ./price-fetcher
-          docker build -t johnsgameprice-web:latest ./web
+          docker build -t johnsgameprice-api-gateway:latest ./services/api-gateway
+          docker build -t johnsgameprice-price-fetcher:latest ./services/price-fetcher
+          docker build -t johnsgameprice-web:latest ./services/web
 
       - name: Load images into KinD
         run: |
           kind load docker-image johnsgameprice-api-gateway:latest --name chart-testing
           kind load docker-image johnsgameprice-price-fetcher:latest --name chart-testing
           kind load docker-image johnsgameprice-web:latest --name chart-testing
+
+      - name: Deploy stack
+        run: bash scripts/deploy.sh
 
       - name: Wait for deployments to be ready
         run: |
@@ -69,7 +69,7 @@ jobs:
       - name: Integration Tests
         env:
           USE_KIND: "true"
-        run: bash integration_test.sh
+        run: bash scripts/integration_test.sh
 
       - name: Show logs on failure
         if: failure()
@@ -81,4 +81,4 @@ jobs:
 
       - name: Clean up
         if: always()
-        run: bash teardown.sh
+        run: bash scripts/teardown.sh

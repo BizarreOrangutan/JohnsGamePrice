@@ -12,7 +12,7 @@ fi
 
 sleep 2
 
-kubectl delete -f k8s/ --ignore-not-found &
+kubectl delete -f deploy/k8s/ --ignore-not-found &
 
 # Uninstall Helm releases in parallel
 helm uninstall grafana -n monitoring || true &

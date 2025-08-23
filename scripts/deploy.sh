@@ -23,9 +23,9 @@ helm repo update
 # Build Docker images (parallel, only locally or in Minikube)
 if [[ "$IS_CI" != "true" && "$IS_KIND" != "true" ]]; then
   eval $(minikube docker-env)
-  docker build -t johnsgameprice-api-gateway:latest ./api-gateway &
-  docker build -t johnsgameprice-price-fetcher:latest ./price-fetcher &
-  docker build -t johnsgameprice-web:latest ./web &
+  docker build -t johnsgameprice-api-gateway:latest ./services/api-gateway &
+  docker build -t johnsgameprice-price-fetcher:latest ./services/price-fetcher &
+  docker build -t johnsgameprice-web:latest ./services/web &
   wait
 fi
 
@@ -44,10 +44,10 @@ if [ -n "${GRAFANA_ADMIN_USER:-}" ] && [ -n "${GRAFANA_ADMIN_PASSWORD:-}" ]; the
 fi
 
 # Deploy monitoring stack (parallel)
-helm upgrade --install loki grafana/loki --namespace monitoring --values johnsgameprice-stack/loki-values.yaml &
-helm upgrade --install promtail grafana/promtail --namespace monitoring --values johnsgameprice-stack/promtail-values.yaml &
-helm upgrade --install grafana grafana/grafana --namespace monitoring --values johnsgameprice-stack/grafana-values.yaml &
-helm upgrade --install prometheus prometheus-community/kube-prometheus-stack --namespace monitoring --values johnsgameprice-stack/prometheus-values.yaml &
+helm upgrade --install loki grafana/loki --namespace monitoring --values deploy/johnsgameprice-stack/loki-values.yaml &
+helm upgrade --install promtail grafana/promtail --namespace monitoring --values deploy/johnsgameprice-stack/promtail-values.yaml &
+helm upgrade --install grafana grafana/grafana --namespace monitoring --values deploy/johnsgameprice-stack/grafana-values.yaml &
+helm upgrade --install prometheus prometheus-community/kube-prometheus-stack --namespace monitoring --values deploy/johnsgameprice-stack/prometheus-values.yaml &
 wait
 
 # Deploy Redis
@@ -58,7 +58,7 @@ REDIS_PASSWORD=$(kubectl get secret --namespace default redis -o jsonpath="{.dat
 kubectl create secret generic redis --from-literal=redis-password="$REDIS_PASSWORD" --namespace=default --dry-run=client -o yaml | kubectl apply -f -
 
 echo "Applying manifests..."
-kubectl apply -f k8s/
+kubectl apply -f deploy/k8s/
 
 echo "✅ Helm charts deployed and manifests applied!"
 
