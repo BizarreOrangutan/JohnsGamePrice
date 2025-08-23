@@ -1,10 +1,11 @@
 import { createApp } from './app.js';
+import logger from './utils/logger.js';
+import { startMetricServer } from './utils/metrics.js';
 
 const app = createApp();
-const port: number = process.env.PORT ? parseInt(process.env.PORT) : 8080;
+const mainPort = process.env.PORT ? parseInt(process.env.PORT) : 8080;
+app.listen(mainPort, () => {
+  logger.info(`API Gateway listening on port ${mainPort}`);
 
-app.listen(port, '0.0.0.0', () => {
-  console.log(`API Gateway running on port ${port}`);
-  console.log(`API Documentation: http://localhost:${port}/api-docs`);
-  console.log(`Price Service: ${process.env.PRICE_SERVICE_URL || 'http://localhost:8000'}`);
+  startMetricServer();
 });

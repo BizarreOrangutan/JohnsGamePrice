@@ -2,8 +2,12 @@ import express from 'express';
 import cors from 'cors';
 import swaggerJsdoc from 'swagger-jsdoc';
 import swaggerUi from 'swagger-ui-express';
+import responseTime from 'response-time';
 import logger from './utils/logger.js';
+import { restResponseTimeHistogram } from './utils/metrics.js';
 import { errorMiddleware } from './utils/errorHandler.js';
+import type { Request, Response } from 'express';
+
 // Import gameRoutes AFTER other imports
 import gameRoutes from './routes/games.js';
 
@@ -35,6 +39,18 @@ export function createApp() {
   // Middleware
   app.use(cors());
   app.use(express.json());
+  app.use(responseTime((req: Request, res: Response, time: number) => {
+    if ((req.route?.path)) {
+      restResponseTimeHistogram.observe(
+        {
+          method: req.method,
+          route: req.route.path,
+          status_code: res.statusCode,
+        },
+        time/1000
+      );
+    }
+  }))
 
   // Swagger UI
   app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(specs));

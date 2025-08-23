@@ -68,7 +68,7 @@ router.get('/search', async (req: express.Request, res: express.Response) => {
     const page = Math.max(1, parseInt(req.query.page as string, 10) || 1);
     const pageSize = Math.min(100, Math.max(1, parseInt(req.query.page_size as string, 10) || 20));
 
-    // Compose cache key
+    // Compose cache key for redis
     const cacheKey = `gamesearch:${query}:${page}:${pageSize}`;
     const cached = await redisClient.get(cacheKey);
     if (cached) {
@@ -76,7 +76,6 @@ router.get('/search', async (req: express.Request, res: express.Response) => {
       return res.status(200).json({ ...cachedData, cached: true });
     }
 
-    // Fetch from price-fetcher as before
     const fetchLimit = 100;
     const priceFetcherServiceUrl = process.env.PRICE_FETCHER_SERVICE_URL || 'http://price-fetcher:8000';
     const searchUrl = `${priceFetcherServiceUrl}/game-ids?title=${encodeURIComponent(query)}&result_num=${fetchLimit}`;
@@ -100,10 +99,8 @@ router.get('/search', async (req: express.Request, res: express.Response) => {
     const allResults = data.games || [];
     const total = allResults.length;
     const start = (page - 1) * pageSize;
-    const end = start + pageSize;
-    const pagedResults = allResults.slice(start, end);
-
-    const responseTime = Date.now() - startTime;
+    const endIdx = start + pageSize;
+    const pagedResults = allResults.slice(start, endIdx);
 
     const responseData = {
       query,
@@ -113,7 +110,7 @@ router.get('/search', async (req: express.Request, res: express.Response) => {
       page_size: pageSize,
       total_pages: Math.ceil(total / pageSize),
       timestamp: new Date().toISOString(),
-      responseTime: `${responseTime}ms`,
+      responseTime: `${Date.now() - startTime}ms`,
     };
 
     // Cache the result for 5 minutes (300 seconds)
@@ -122,7 +119,7 @@ router.get('/search', async (req: express.Request, res: express.Response) => {
     res.status(200).json(responseData);
 
   } catch (error) {
-    handleApiError(error, req, res, { startTime });
+    handleApiError(error, req, res, { startTime }); // <-- Use local variable
   }
 });
 
@@ -153,7 +150,7 @@ router.get('/search', async (req: express.Request, res: express.Response) => {
  */
 router.get('/prices', async (req: express.Request, res: express.Response) => {
   const startTime = Date.now();
-  
+
   try {
     const gameId = validateGameId(req.query.id);
 
@@ -165,13 +162,13 @@ router.get('/prices', async (req: express.Request, res: express.Response) => {
 
     const priceFetcherServiceUrl = process.env.PRICE_FETCHER_SERVICE_URL || 'http://price-fetcher:8000';
     const pricesUrl = `${priceFetcherServiceUrl}/prices?id=${encodeURIComponent(gameId)}`;
-    
-    const response = await fetchWithErrorHandling(pricesUrl, 'price-fetcher', { 
-      timeout: 20000 
+
+    const response = await fetchWithErrorHandling(pricesUrl, 'price-fetcher', {
+      timeout: 20000
     });
-    
+
     let data: unknown;
-    
+
     try {
       data = await response.json();
       validateResponseData(data, 'object');
@@ -183,20 +180,18 @@ router.get('/prices', async (req: express.Request, res: express.Response) => {
       });
       throw new DataFormatError('Invalid JSON response from price fetcher service', 'JSON');
     }
-    
-    const responseTime = Date.now() - startTime;
-    
+
     logger.info(`Successfully retrieved prices for game`, {
       gameId,
       pricesCount: Object.keys(data as object).length,
-      responseTimeMs: responseTime,
+      responseTimeMs: Date.now() - startTime,
     });
-    
+
     res.status(200).json({
       id: gameId,
       prices: data,
       timestamp: new Date().toISOString(),
-      responseTime: `${responseTime}ms`,
+      responseTime: `${Date.now() - startTime}ms`,
     });
 
   } catch (error) {

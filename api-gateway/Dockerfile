@@ -16,5 +16,5 @@ COPY . .
 FROM base as runtime
 RUN bun install --frozen-lockfile --production
 COPY . .
-EXPOSE 8080
+EXPOSE 8080 9100
 CMD ["bun", "run", "start"]
