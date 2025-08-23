@@ -23,10 +23,10 @@ jobs:
 
       - name: Create price-fetcher-secret
         run: |
-          kubectl create secret generic price-fetcher-secret --from-literal=API_KEY=${{ secrets.ISTHEREANYDEAL_API_KEY }} --namespace=default
+          kubectl create secret generic price-fetcher-secret --from-literal=API_KEY=${{ secrets.ISTHEREANYDEAL_API_KEY }} --namespace=default --dry-run=client -o yaml | kubectl apply -f -
 
       - name: Deploy stack
-        run: bash .deploy.test.sh
+        run: bash deploy.sh
 
       - name: Build Docker images
         run: |
@@ -81,6 +81,4 @@ jobs:
 
       - name: Clean up
         if: always()
-        run: |
-          kubectl delete namespace monitoring --ignore-not-found
-          kubectl delete namespace redis --ignore-not-found
+        run: bash teardown.sh
