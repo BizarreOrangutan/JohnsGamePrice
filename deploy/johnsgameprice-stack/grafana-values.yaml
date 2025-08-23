@@ -1,0 +1,26 @@
+persistence:
+  enabled: false
+  size: 10Gi
+  storageClassName: standard
+datasources:
+  datasources.yaml:
+    apiVersion: 1
+    datasources:
+      - name: Loki
+        type: loki
+        access: proxy
+        url: http://loki.monitoring:3100
+        isDefault: false
+        jsonData:
+          httpHeaderName1: 'X-Scope-OrgID'
+        secureJsonData:
+          httpHeaderValue1: 'admin'
+      - name: Prometheus
+        type: prometheus
+        access: proxy
+        url: http://prometheus-kube-prometheus-prometheus.monitoring.svc.cluster.local:9090
+        isDefault: true
+admin:
+  existingSecret: grafana-admin-creds
+  userKey: admin-user
+  passwordKey: admin-password
