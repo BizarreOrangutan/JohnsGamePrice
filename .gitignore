@@ -2,3 +2,4 @@
 .env.*
 .pytest_cache/
 api_key.txt
+.secrets
