@@ -27,15 +27,17 @@ jobs:
 
       - name: Build Docker images
         run: |
-          docker build -t johnsgameprice-api-gateway:latest ./services/api-gateway
-          docker build -t johnsgameprice-price-fetcher:latest ./services/price-fetcher
-          docker build -t johnsgameprice-web:latest ./services/web
+          docker build -t johnsgameprice-api-gateway:latest ./services/api-gateway &
+          docker build -t johnsgameprice-price-fetcher:latest ./services/price-fetcher &
+          docker build -t johnsgameprice-web:latest ./services/web &
+          wait
 
       - name: Load images into KinD
         run: |
-          kind load docker-image johnsgameprice-api-gateway:latest --name chart-testing
-          kind load docker-image johnsgameprice-price-fetcher:latest --name chart-testing
-          kind load docker-image johnsgameprice-web:latest --name chart-testing
+          kind load docker-image johnsgameprice-api-gateway:latest --name chart-testing &
+          kind load docker-image johnsgameprice-price-fetcher:latest --name chart-testing &
+          kind load docker-image johnsgameprice-web:latest --name chart-testing &
+          wait
 
       - name: Deploy stack
         run: bash scripts/deploy.sh
@@ -65,6 +67,7 @@ jobs:
           wait_and_log deployment api-gateway default 120s
           wait_and_log deployment price-fetcher default 120s
           wait_and_log deployment web default 120s
+          wait_and_log deployment grafana monitoring 180s
 
       - name: Integration Tests
         env:
