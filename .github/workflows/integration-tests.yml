@@ -82,6 +82,17 @@ jobs:
           kubectl logs deployment/price-fetcher || true
           kubectl logs deployment/web || true
 
+      - name: Debug Grafana rollout failure
+        if: failure()
+        run: |
+          kubectl get pods -n monitoring -o wide
+          kubectl describe deployment grafana -n monitoring
+          kubectl describe pods -n monitoring -l app.kubernetes.io/name=grafana
+          for pod in $(kubectl get pods -n monitoring -l app.kubernetes.io/name=grafana -o jsonpath="{.items[*].metadata.name}"); do
+            echo "---- Logs for pod $pod ----"
+            kubectl logs -n monitoring $pod || true
+          done
+
       - name: Clean up
         if: always()
         run: bash scripts/teardown.sh
