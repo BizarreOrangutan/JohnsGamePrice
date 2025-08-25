@@ -25,6 +25,15 @@ jobs:
         run: |
           kubectl create secret generic price-fetcher-secret --from-literal=API_KEY=${{ secrets.ISTHEREANYDEAL_API_KEY }} --namespace=default --dry-run=client -o yaml | kubectl apply -f -
 
+      - name: Create Grafana admin secret (placeholder)
+        run: |
+          kubectl create namespace monitoring --dry-run=client -o yaml | kubectl apply -f -
+          kubectl create secret generic grafana-admin-creds \
+            --namespace monitoring \
+            --from-literal=admin-user=admin \
+            --from-literal=admin-password=admin \
+            --dry-run=client -o yaml | kubectl apply -f -
+
       - name: Build Docker images
         run: |
           docker build -t johnsgameprice-api-gateway:latest ./services/api-gateway &
