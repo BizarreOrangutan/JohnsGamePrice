@@ -1,12 +1,18 @@
-import { StrictMode } from 'react';
-import { createRoot } from 'react-dom/client';
-import App from './App.tsx';
+import React from 'react';
+import ReactDOM from 'react-dom/client';
+import App from './App';
 import { ThemeContextProvider } from './modules/core/theme/ThemeContextProvider.tsx';
 
-createRoot(document.getElementById('root')!).render(
-  <StrictMode>
+if (import.meta.env.DEV) {
+  import('./mocks/browser').then(({ worker }) => {
+    worker.start();
+  });
+}
+
+ReactDOM.createRoot(document.getElementById('root')!).render(
+  <React.StrictMode>
     <ThemeContextProvider>
       <App />
     </ThemeContextProvider>
-  </StrictMode>
+  </React.StrictMode>
 );

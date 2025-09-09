@@ -19,21 +19,17 @@ export interface GameSearchResponse {
   timestamp: string;
 }
 
-const getApiUrl = () => {
-  // Check if we're running in Docker (no window object) or in browser
+export const getApiUrl = () => {
+  // Server-side (Docker build)
   if (typeof window === 'undefined') {
-    // Server-side (Docker build) - use service name
     return 'http://api-gateway:8080';
   }
-  
-  // Client-side (browser) 
+
+  // Development mode (localhost)
   if (window.location.hostname === 'localhost') {
-    // Development mode - hardcode for now
-    return 'http://localhost:8080';
+    // Use relative path for MSW interception
+    return '';
   }
-  
-  // Production - use the same host as the web app
-  return '';
 };
 
 export const gameSearchService = {
