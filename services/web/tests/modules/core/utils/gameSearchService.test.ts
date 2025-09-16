@@ -1,5 +1,4 @@
 // @ts-ignore
-import { describe, test, expect, beforeEach, afterEach } from 'bun:test';
 import { gameSearchService } from '../../../../src/modules/core/utils/gameSearchService';
 
 // Simple fetch mock

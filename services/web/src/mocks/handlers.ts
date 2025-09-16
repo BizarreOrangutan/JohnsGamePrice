@@ -1,5 +1,5 @@
 import { http } from 'msw';
-import type { GameSearchResult, PriceInfo, GameDetailsResult } from '../modules/core/utils/gameSearchService';
+import type { GameSearchResult, PriceInfo, GameHistoryResult } from '../modules/core/utils/gameSearchService';
 
 const mockResults: GameSearchResult[] = [
   {
@@ -392,17 +392,23 @@ export const handlers = [
       timestamp: new Date().toISOString()
     });
   }),
-  http.get('/api/games/details/:id', ({ params }) => {
+  http.get('/api/games/history/:id', ({ params }) => {
     const id = String(params.id);
     const game = mockResults.find(g => g.id === id) || mockResults[0];
     const prices = mockPricesById[id] || [];
 
-    const mockDetails: GameDetailsResult = {
+    const mockHistory: GameHistoryResult = {
       ...game,
       prices,
       priceHistory: mockPriceHistoryById[id] || []
     };
 
-    return Response.json(mockDetails);
+    return Response.json(mockHistory);
+  }),
+
+  http.get('/api/games/current/:id', ({ params }) => {
+    const id = String(params.id);
+    const prices = mockPricesById[id] || [];
+    return Response.json(prices);
   }),
 ];

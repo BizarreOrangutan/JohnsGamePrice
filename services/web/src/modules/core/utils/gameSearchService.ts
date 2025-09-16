@@ -42,7 +42,7 @@ export interface PriceHistoryPoint {
   };
 }
 
-export interface GameDetailsResult extends GameSearchResult {
+export interface GameHistoryResult extends GameSearchResult {
   prices: PriceInfo[];
   priceHistory: PriceHistoryPoint[];
 }
@@ -84,11 +84,11 @@ export const gameSearchService = {
     }
   },
 
-  async getGameDetails(id: string): Promise<GameDetailsResult | null> {
+  async getGameHistory(id: string): Promise<GameHistoryResult | null> {
     if (!id) return null;
     try {
       const baseUrl = getApiUrl();
-      const detailsUrl = `${baseUrl}/api/games/details/${encodeURIComponent(id)}`;
+  const detailsUrl = `${baseUrl}/api/games/history/${encodeURIComponent(id)}`;
       const response = await fetch(detailsUrl);
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
@@ -97,9 +97,28 @@ export const gameSearchService = {
       if (!contentType || !contentType.includes('application/json')) {
         throw new Error(`Expected JSON, got ${contentType}`);
       }
-      const details: GameDetailsResult = await response.json();
-      
-      return details;
+  const details: GameHistoryResult = await response.json();
+  return details;
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  async getCurrentPrices(id: string): Promise<PriceInfo[] | null> {
+    if (!id) return null;
+    try {
+      const baseUrl = getApiUrl();
+  const pricesUrl = `${baseUrl}/api/games/current/${encodeURIComponent(id)}`;
+      const response = await fetch(pricesUrl);
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        throw new Error(`Expected JSON, got ${contentType}`);
+      }
+      const prices: PriceInfo[] = await response.json();
+      return prices;
     } catch (error) {
       throw error;
     }
