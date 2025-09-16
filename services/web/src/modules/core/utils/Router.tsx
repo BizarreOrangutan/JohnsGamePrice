@@ -1,10 +1,16 @@
 import { createBrowserRouter } from 'react-router-dom';
-
+import { Outlet } from 'react-router-dom';
 import AppAppBar from '../components/AppAppBar.tsx';
+
 import { routes } from './routes.tsx';
 
 const AppAppBarWrapper = () => {
-  return <AppAppBar />;
+  return (
+    <>
+      <AppAppBar />
+      <Outlet />
+    </>
+  );
 };
 
 export const Router = createBrowserRouter([

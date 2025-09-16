@@ -12,6 +12,41 @@ export interface GameSearchResult {
   type?: string;
 }
 
+export interface PriceInfo {
+  store: string;
+  currentPrice: number;
+  basePrice?: number;
+  currency: string;
+  discount?: number;
+  url?: string;
+}
+
+export interface PriceHistoryPoint {
+  timestamp: string;
+  shop: {
+    id: number;
+    name: string;
+  };
+  deal: {
+    price: {
+      amount: number;
+      amountInt: number;
+      currency: string;
+    };
+    regular: {
+      amount: number;
+      amountInt: number;
+      currency: string;
+    };
+    cut: number;
+  };
+}
+
+export interface GameDetailsResult extends GameSearchResult {
+  prices: PriceInfo[];
+  priceHistory: PriceHistoryPoint[];
+}
+
 export interface GameSearchResponse {
   query: string;
   results: GameSearchResult[];
@@ -20,52 +55,52 @@ export interface GameSearchResponse {
 }
 
 export const getApiUrl = () => {
-  // Server-side (Docker build)
-  if (typeof window === 'undefined') {
-    return 'http://api-gateway:8080';
-  }
-
-  // Development mode (localhost)
-  if (window.location.hostname === 'localhost') {
-    // Use relative path for MSW interception
+  // Always use relative path in development for MSW interception
+  if (typeof window !== 'undefined' && window.location.hostname === 'localhost') {
     return '';
   }
+  // Use your production API host in production
+  return 'http://api-gateway:8080';
 };
 
 export const gameSearchService = {
   async searchGames(query: string): Promise<GameSearchResult[]> {
-    console.log("In search games")
     if (!query.trim()) return [];
-    
     try {
       const baseUrl = getApiUrl();
       const url = `${baseUrl}/api/games/search?query=${encodeURIComponent(query)}`;
-      
-      console.log('Fetching from:', url);
-      console.log('Environment:', {
-        hostname: typeof window !== 'undefined' ? window.location.hostname : 'server',
-        VITE_API_URL: import.meta.env.VITE_API_URL,
-        baseUrl
-      });
-      
       const response = await fetch(url);
-      console.log('Response:', response.status, response.statusText);
-      
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
-
       const contentType = response.headers.get('content-type');
       if (!contentType || !contentType.includes('application/json')) {
-        const text = await response.text();
-        console.error('Non-JSON response:', text.substring(0, 200));
         throw new Error(`Expected JSON, got ${contentType}`);
       }
-      
       const data: GameSearchResponse = await response.json();
       return data.results || [];
     } catch (error) {
-      console.error('Search error:', error);
+      throw error;
+    }
+  },
+
+  async getGameDetails(id: string): Promise<GameDetailsResult | null> {
+    if (!id) return null;
+    try {
+      const baseUrl = getApiUrl();
+      const detailsUrl = `${baseUrl}/api/games/details/${encodeURIComponent(id)}`;
+      const response = await fetch(detailsUrl);
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        throw new Error(`Expected JSON, got ${contentType}`);
+      }
+      const details: GameDetailsResult = await response.json();
+      
+      return details;
+    } catch (error) {
       throw error;
     }
   }

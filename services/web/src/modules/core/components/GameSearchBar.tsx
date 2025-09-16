@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import Autocomplete from '@mui/material/Autocomplete';
 import TextField from '@mui/material/TextField';
 import InputAdornment from '@mui/material/InputAdornment';
@@ -35,6 +36,7 @@ const GameSearchBar = ({
 }: GameSearchBarProps) => {
   const { searchOptions, loading, error, searchValue, setSearchValue } = useGameSearch(debounceMs);
   const [selectedValue, setSelectedValue] = useState<GameSearchResult | null>(null);
+  const navigate = useNavigate();
 
   const handleInputChange = (event: SyntheticEvent, newValue: string) => {
     setSearchValue(newValue);
@@ -44,15 +46,20 @@ const GameSearchBar = ({
     event: SyntheticEvent,
     newValue: GameSearchResult | string | null
   ) => {
-    // Handle both GameSearchResult objects and string values
     if (typeof newValue === 'string') {
-      // User typed a custom value - we could search for it or ignore
       setSelectedValue(null);
       onGameSelect?.(null);
     } else {
-      // User selected a game from the dropdown
       setSelectedValue(newValue);
       onGameSelect?.(newValue);
+    }
+  };
+
+  // On Enter, navigate to /search with the exact searchValue, do not autocomplete
+  const handleKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
+    if (event.key === 'Enter' && searchValue.trim()) {
+      event.preventDefault(); // Prevent Autocomplete default behavior
+      navigate(`/search?query=${encodeURIComponent(searchValue.trim())}`);
     }
   };
 
@@ -95,6 +102,7 @@ const GameSearchBar = ({
           sx={{
             input: { color: 'black' },
           }}
+          onKeyDown={handleKeyDown}
           slotProps={{
             input: {
               ...params.InputProps,

@@ -8,13 +8,24 @@ import NavDrawer from './NavDrawer';
 import DarkModeToggle from './DarkModeToggle';
 import GameSearchBar from './GameSearchBar';
 import type { GameSearchResult } from '../utils/gameSearchService';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { useState, useEffect } from 'react';
 
 const AppAppBar = () => {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const [searchKey, setSearchKey] = useState(0);
+
+  useEffect(() => {
+
+    if (location.pathname.startsWith('/analytics')) {
+      setSearchKey((prev) => prev + 1);
+    }
+  }, [location.pathname]);
+
   const handleGameSelect = (game: GameSearchResult | null) => {
-    if (game) {
-      console.log('Selected game:', game);
-      // TODO: Navigate to game details page
-      // navigate(`/game/${game.slug || game.id}`);
+    if (game && game.id) {
+      navigate(`/analytics/${game.id}`);
     }
   };
 
@@ -28,6 +39,7 @@ const AppAppBar = () => {
         <Box sx={{ flexGrow: 1, display: 'flex', justifyContent: 'center' }}>
           <ErrorBoundary fallback="Error loading search bar">
             <GameSearchBar
+              key={searchKey}
               placeholder="Search for a game"
               onGameSelect={handleGameSelect}
               minWidth={600}
