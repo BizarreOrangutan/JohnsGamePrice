@@ -1,8 +1,16 @@
+import os
+
 import requests
+from dotenv import load_dotenv
 from fastapi import HTTPException
 
 from .logger import get_logger
 
+load_dotenv()
+
+api_key = os.getenv("API_KEY")
+if not api_key:
+    raise ValueError("API_KEY environment variable is required")
 
 class ITADClient:
     def __init__(self, api_key, logger=None):
@@ -72,3 +80,10 @@ class ITADClient:
             raise HTTPException(
                 status_code=500, detail="Error communicating with ITAD API"
             )
+
+
+logger = get_logger()
+itad_client = ITADClient(api_key, logger);
+
+def get_itad_client() -> ITADClient:
+    return itad_client

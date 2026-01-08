@@ -1,24 +1,11 @@
-import os
-from datetime import datetime
-from typing import Optional
+from fastapi import Depends, FastAPI, HTTPException
 
-from dotenv import load_dotenv
-from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel, Field
-
-from .itad_client import ITADClient
+from .itad_client import ITADClient, get_itad_client
 from .logger import get_logger
 from .models import HistoryRequest, PriceRequest
 from .utils import verify_country_code, verify_date_format
 
-load_dotenv()
-api_key = os.getenv("API_KEY")
-if not api_key:
-    raise ValueError("API_KEY environment variable is required")
-
 logger = get_logger()
-
-itad_client = ITADClient(api_key, logger)
 
 app = FastAPI()
 
@@ -30,19 +17,19 @@ def read_root():
 
 
 @app.get("/search-game")
-def search_game(title: str):
+def search_game(title: str, client: ITADClient = Depends(get_itad_client)):
     title = title.strip()
     logger.info(f"Searching for game with title: {title}")
 
     if title == "":
         raise HTTPException(status_code=400, detail="Title parameter cannot be empty")
 
-    search_result = itad_client.search_game(title)
+    search_result = client.search_game(title)
     return search_result
 
 
 @app.post("/prices")
-def get_prices(req: PriceRequest):
+def get_prices(req: PriceRequest, client: ITADClient = Depends(get_itad_client)):
     game_id = req.game_id.strip()
     country = req.country.strip().upper()
     shops = req.shops
@@ -55,12 +42,12 @@ def get_prices(req: PriceRequest):
 
     verify_country_code(country)
 
-    price_results = itad_client.get_game_prices(game_id, country, shops)
+    price_results = client.get_game_prices(game_id, country, shops)
     return price_results
 
 
 @app.post("/history")
-def get_price_history(req: HistoryRequest):
+def get_price_history(req: HistoryRequest, client: ITADClient = Depends(get_itad_client)):
     game_id = req.game_id.strip()
     country = req.country.strip().upper()
     shops = req.shops
@@ -77,5 +64,5 @@ def get_price_history(req: HistoryRequest):
 
     verify_country_code(country)
 
-    price_history = itad_client.get_game_history(game_id, country, shops, since)
+    price_history = client.get_game_history(game_id, country, shops, since)
     return price_history
