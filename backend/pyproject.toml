@@ -1,0 +1,45 @@
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[project]
+name = "jpg_backend"
+version = "0.1.0"
+description = "Backend for JohnsGamePrice"
+authors = [
+    { name = "Jamie Hunt", email = "jamie.hunt@gmail.com" }
+]
+dependencies = [
+    "requests",
+    "python-dotenv",
+    "fastapi",
+    "uvicorn"
+]
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.10"
+
+[dependency-groups]
+dev = [
+    "pytest (>=9.0.2,<10.0.0)",
+    "pytest-cov (>=7.0.0,<8.0.0)",
+    "httpx (>=0.28.1,<0.29.0)",
+    "black (>=25.12.0,<26.0.0)",
+    "isort (>=7.0.0,<8.0.0)",
+    "poethepoet (>=0.40.0,<0.41.0)"
+]
+
+[tool.black]
+line-length = 88
+target-version = ['py310']
+
+[tool.isort]
+profile = "black"
+
+[tool.poe.tasks]
+dev = "uvicorn jpg_backend.main:app --reload"
+test = "pytest"
+cov = "pytest --cov=jpg_backend --cov-report=term-missing"
+format = "isort . && black ."
+check = "isort --check-only . && black --check ."
+

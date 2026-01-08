@@ -3,3 +3,6 @@
 .pytest_cache/
 api_key.txt
 .secrets
+venv/
+__pycache__/
+*.pyc

@@ -1,6 +1,7 @@
 import requests
-from .logger import get_logger
 from fastapi import HTTPException
+
+from .logger import get_logger
 
 
 class ITADClient:
@@ -25,12 +26,16 @@ class ITADClient:
                 status_code=500, detail="Error communicating with ITAD API"
             )
 
-    def get_game_prices(self, game_id: str, country: str) -> object | None:
+    def get_game_prices(self, game_id: str, country: str, shops=None) -> object | None:
         """Fetches price information for a game using its ITAD game ID"""
         try:
+            params = {"key": self.api_key, "country": country}
+            if shops:
+                params["shops"] = ",".join(map(str, shops))
+
             response = requests.post(
                 f"{self.base_url}/games/prices/v3",
-                params={"key": self.api_key, "country": country},
+                params=params,
                 json=[game_id],
                 headers={"Content-Type": "application/json"},
             )
@@ -40,6 +45,29 @@ class ITADClient:
         except requests.RequestException as e:
             self.logger.error(
                 f"Error fetching prices for game ID '{game_id}' and country '{country}': {e}"
+            )
+            raise HTTPException(
+                status_code=500, detail="Error communicating with ITAD API"
+            )
+
+    def get_game_history(
+        self, game_id: str, country: str, shops: list[int] = None, since: str = None
+    ) -> object | None:
+        """Fetches price history for a game using its ITAD game ID"""
+        try:
+            params = {"id": game_id, "key": self.api_key, "country": country}
+            if shops:
+                params["shops"] = ",".join(map(str, shops))
+            if since:
+                params["since"] = since
+
+            response = requests.get(f"{self.base_url}/games/history/v2", params=params)
+            response.raise_for_status()
+            data = response.json()
+            return data
+        except requests.RequestException as e:
+            self.logger.error(
+                f"Error fetching History for game ID '{game_id}' and country '{country}': {e}"
             )
             raise HTTPException(
                 status_code=500, detail="Error communicating with ITAD API"
