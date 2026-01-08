@@ -32,9 +32,9 @@ def search_game(title: str, client: ITADClient = Depends(get_itad_client)):
 def get_prices(req: PriceRequest, client: ITADClient = Depends(get_itad_client)):
     game_id = req.game_id.strip()
     country = req.country.strip().upper()
-    shops = req.shops
+    shop_ids = req.shop_ids    
     logger.info(
-        f"Fetching prices for game ID: {game_id} and country: {country} with shops: {shops}"
+        f"Fetching prices for game ID: {game_id} and country: {country} with shop ids: {shop_ids}"
     )
 
     if game_id == "":
@@ -42,7 +42,7 @@ def get_prices(req: PriceRequest, client: ITADClient = Depends(get_itad_client))
 
     verify_country_code(country)
 
-    price_results = client.get_game_prices(game_id, country, shops)
+    price_results = client.get_game_prices(game_id, country, shop_ids)
     return price_results
 
 
@@ -50,10 +50,10 @@ def get_prices(req: PriceRequest, client: ITADClient = Depends(get_itad_client))
 def get_price_history(req: HistoryRequest, client: ITADClient = Depends(get_itad_client)):
     game_id = req.game_id.strip()
     country = req.country.strip().upper()
-    shops = req.shops
+    shop_ids = req.shop_ids
     since = req.since
     logger.info(
-        f"Fetching price history for game ID: {game_id} and country: {country} with shops: {shops} and since: {since}"
+        f"Fetching price history for game ID: {game_id} and country: {country} with shop ids: {shop_ids} and since: {since}"
     )
 
     if game_id == "":
@@ -64,5 +64,5 @@ def get_price_history(req: HistoryRequest, client: ITADClient = Depends(get_itad
 
     verify_country_code(country)
 
-    price_history = client.get_game_history(game_id, country, shops, since)
+    price_history = client.get_game_history(game_id, country, shop_ids, since)
     return price_history
