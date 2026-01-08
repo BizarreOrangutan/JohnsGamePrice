@@ -1,6 +1,6 @@
 from fastapi import FastAPI, HTTPException
-from itad_client import ITADClient
-from logger import get_logger
+from .itad_client import ITADClient
+from .logger import get_logger
 from dotenv import load_dotenv
 import os
 import re

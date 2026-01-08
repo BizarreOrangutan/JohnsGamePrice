@@ -1,5 +1,5 @@
 import requests
-from logger import get_logger
+from .logger import get_logger
 from fastapi import HTTPException
 
 
