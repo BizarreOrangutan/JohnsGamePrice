@@ -1,30 +1,34 @@
-import SearchButton from './SearchButton';
-import { useState } from 'react';
+import { Input } from '@headlessui/react'
 
 interface SearchBarProps {
-  onSearch: (query: string) => void
+  input: string
+  setInput: React.Dispatch<React.SetStateAction<string>>
+  handleEnter: (e: React.KeyboardEvent<HTMLInputElement>) => void
 }
 
-const SearchBar: React.FC<SearchBarProps> = ({ onSearch }) => {
-  const [query, setQuery] = useState<string>('');
-
+const SearchBar: React.FC<SearchBarProps> = ({
+  input,
+  setInput,
+  handleEnter,
+}) => {
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setQuery(e.target.value)
-  }
-
-  const handleSearch = () => {
-    onSearch(query)
+    setInput(e.target.value)
   }
 
   return (
-    <div>
-      <input
+    <div className="search-bar relative">
+      <Input
         type="text"
-        value={query}
+        value={input}
         onChange={handleInputChange}
-        placeholder="Search..."
+        placeholder="Search for a game..."
+        className="w-full rounded-md border border-gray-300 p-2"
+        onKeyDown={(e) => {
+          if (e.key === 'Enter') {
+            handleEnter(e)
+          }
+        }}
       />
-      <SearchButton onClick={handleSearch} />
     </div>
   )
 }

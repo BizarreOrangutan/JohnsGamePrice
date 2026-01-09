@@ -1,28 +1,44 @@
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+import type { GameSearchResult } from '../types/api'
 
-interface GameSearchResultItem {
-    id: string;
-    slug: string;
-    title: string;
-    type: string;
-    mature: boolean;
-    assets: {
-        banner145: string;
-        banner300: string;
-        banner400: string;
-        boxart: string;
-    }
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
+
+export async function searchGame(
+  title: string
+): Promise<GameSearchResult | null> {
+  const response = await fetch(
+    `${API_URL}/search-game?title=${encodeURIComponent(title)}`
+  )
+
+  if (!response.ok) {
+    throw new Error('Network response was not ok')
+  }
+
+  const data = await response.json()
+  console.log('API Response:', data)
+  const transformedData: GameSearchResult | null = Array.isArray(data)
+    ? data
+    : null
+  console.log('Transformed Data:', transformedData)
+  return transformedData
 }
 
-interface GameSearchResult {
-    games: Array<GameSearchResultItem>;
-}
+// Post request to get game prices
+export async function getGamePrices(
+  game_id: string,
+  country: string = 'GB'
+): Promise<any> {
+  const response = await fetch(`${API_URL}/prices`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ game_id, country }),
+  })
 
-export async function searchGame(title: string): Promise<GameSearchResult | null> {
-    const response = await fetch(`${API_URL}/search-game?title=${encodeURIComponent(title)}`);
-    if (!response.ok) {
-        throw new Error('Network response was not ok');
-    }
-    return response.json();
-}
+  if (!response.ok) {
+    throw new Error('Network response was not ok')
+  }
 
+  const data = await response.json()
+  return data
+}

@@ -1,17 +1,29 @@
-import SearchBar from '../components/SearchBar';
-import { searchGame } from '../services/api';
+import SearchBar from '../components/SearchBar'
+import { useContext } from 'react'
+import { AppContext } from '../AppContext'
+import { searchGame } from '../services/api'
+import { useNavigate } from 'react-router-dom'
 
 const SearchPage = () => {
-  const handleSearch = async (query: string) => {
-    console.log('Searching for:', query)
-    const results = await searchGame(query);
-    console.log('Search results:', results);
+  const navigate = useNavigate()
+  const { setGamesList, query, setQuery } = useContext(AppContext)
+
+  const handleSearch = async () => {
+    const response = await searchGame(query)
+    setGamesList(response)
+    if (response !== null) {
+      navigate('/search-game?query=' + encodeURIComponent(query))
+    }
+    console.log('Search Results Response:', response)
   }
 
   return (
     <div>
-      <h1>Search Page</h1>
-      <SearchBar onSearch={handleSearch} />
+      <SearchBar
+        input={query}
+        setInput={setQuery as React.Dispatch<React.SetStateAction<string>>}
+        handleEnter={handleSearch}
+      />
     </div>
   )
 }
