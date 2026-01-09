@@ -5,8 +5,6 @@ import GameDetailPage from './pages/GameDetailPage'
 import './App.css'
 import { Routes, Route } from 'react-router-dom'
 
-// TODO: Create page layout for the SEARCH state and use context to switch between them
-
 function App() {
   return (
     <>
