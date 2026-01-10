@@ -1,38 +1,89 @@
+import Card from '@mui/material/Card'
+import CardContent from '@mui/material/CardContent'
 import {
   ResponsiveContainer,
   Line,
   LineChart,
   Tooltip,
   Legend,
-  CartesianGrid,
   YAxis,
   XAxis,
 } from 'recharts'
-import { useContext, useEffect, useState } from 'react'
+import { useContext, useEffect, useMemo, useRef, useState } from 'react'
+import Checkbox from '@mui/material/Checkbox'
+import FormControl from '@mui/material/FormControl'
+import InputLabel from '@mui/material/InputLabel'
+import MenuItem from '@mui/material/MenuItem'
+import ListItemText from '@mui/material/ListItemText'
+import Select from '@mui/material/Select'
+import type { SelectChangeEvent } from '@mui/material/Select'
+import OutlinedInput from '@mui/material/OutlinedInput'
 import { AppContext } from '../AppContext'
+
+const dateOptions = [
+  { label: 'All Time', value: 'all' },
+  { label: 'Past Year', value: 'year' },
+  { label: 'Past 3 Months', value: '3months' },
+]
+
+function useDebouncedSet(setter: (val: Set<string>) => void, delay: number = 100) {
+  const timeout = useRef<number | null>(null)
+  const setDebounced = (val: Set<string>) => {
+    if (timeout.current) clearTimeout(timeout.current)
+    timeout.current = setTimeout(() => setter(new Set(val)), delay)
+  }
+  // Cleanup on unmount
+  useEffect(() => () => { if (timeout.current) clearTimeout(timeout.current) }, [])
+  return setDebounced
+}
 
 const PriceHistoryChart = () => {
   const { historyList, pricesList } = useContext(AppContext)
-  const [chartData, setChartData] = useState<any[]>([])
-  const [stores, setStores] = useState<Set<string>>(new Set())
+  const [filteredStores, setFilteredStores] = useState<Set<string>>(new Set())
+  const [dateRange, setDateRange] = useState(dateOptions[0].value)
+  const setFilteredStoresDebounced = useDebouncedSet(setFilteredStores, 120)
 
-  const parseHistoryData = () => {
-    if (!historyList) return
-    try {
-      // Collect all unique store names
-      const possibleStores = new Set<string>()
+  // Memoize stores calculation
+  const stores = useMemo(() => {
+    const possibleStores = new Set<string>()
+    if (historyList) {
       historyList.forEach((point) => {
         possibleStores.add(point.shop.name)
       })
-      if (pricesList) {
-        pricesList.forEach((priceItem) => {
-          priceItem.deals.forEach((deal) => {
-            possibleStores.add(deal.shop.name)
-          })
+    }
+    if (pricesList) {
+      pricesList.forEach((priceItem) => {
+        priceItem.deals.forEach((deal) => {
+          possibleStores.add(deal.shop.name)
         })
-      }
-      setStores(possibleStores)
+      })
+    }
+    return possibleStores
+  }, [historyList, pricesList])
 
+  // When stores change, default to first N stores checked
+  useEffect(() => {
+    if (stores.size > 0) {
+      setFilteredStores((prev) => {
+        const prevArr = Array.from(prev)
+        const storesArr = Array.from(stores)
+        // Only update if stores have changed
+        if (
+          prevArr.length !== storesArr.length ||
+          !prevArr.every((s) => stores.has(s))
+        ) {
+          // Select only the first MAX_VISIBLE_STORES
+          return new Set(storesArr.slice(0, MAX_VISIBLE_STORES));
+        }
+        return prev;
+      });
+    }
+  }, [stores]);
+
+  // Memoize chart data calculation
+  const chartData = useMemo(() => {
+    if (!historyList) return []
+    try {
       // Group by timestamp
       const grouped: { [date: string]: any } = {}
       historyList.forEach((point) => {
@@ -56,14 +107,31 @@ const PriceHistoryChart = () => {
       }
 
       // Convert grouped object to array sorted by date (ascending)
-      const groupedArr = Object.values(grouped).sort((a: any, b: any) => {
+      let groupedArr = Object.values(grouped).sort((a: any, b: any) => {
         const da = new Date(a.date.split('/').reverse().join('-'))
         const db = new Date(b.date.split('/').reverse().join('-'))
         return da.getTime() - db.getTime()
       })
 
+      // Date filtering
+      if (dateRange !== 'all') {
+        const now = new Date()
+        let cutoff: Date
+        if (dateRange === 'year') {
+          cutoff = new Date(now.getFullYear() - 1, now.getMonth(), now.getDate())
+        } else if (dateRange === '3months') {
+          cutoff = new Date(now.getFullYear(), now.getMonth() - 3, now.getDate())
+        } else {
+          cutoff = new Date(0)
+        }
+        groupedArr = groupedArr.filter((row: any) => {
+          const d = new Date(row.date.split('/').reverse().join('-'))
+          return d >= cutoff
+        })
+      }
+
       // For each store, find first index where it appears
-      const allStores = Array.from(possibleStores)
+      const allStores = Array.from(stores)
       const storeFirstIndex: Record<string, number> = {}
       allStores.forEach((store) => {
         for (let i = 0; i < groupedArr.length; i++) {
@@ -88,39 +156,154 @@ const PriceHistoryChart = () => {
         return filledRow
       })
 
-      console.log('Parsed chart data:', storesData)
-      setChartData(storesData)
+      return storesData
     } catch (error) {
       console.error('Error parsing history data:', error)
+      return []
     }
-  }
+  }, [historyList, pricesList, dateRange, stores])
 
-  // Update chart data when historyList or pricesList changes
-  useEffect(() => {
-    parseHistoryData()
-  }, [historyList, pricesList])
+  // Limit: max 3 checked stores
+  const MAX_VISIBLE_STORES = 3;
+  const storeNames = useMemo(() => [...stores], [stores]);
+  const visibleStores = useMemo(
+    () => storeNames.filter(store => filteredStores.has(store)),
+    [storeNames, filteredStores]
+  );
+  const checkedCount = visibleStores.length;
+
+  // MUI Select change handler
+  const handleStoreSelectChange = (event: SelectChangeEvent<typeof storeNames>) => {
+    const {
+      target: { value },
+    } = event;
+    let selected = typeof value === 'string' ? value.split(',') : value;
+    // Enforce max selection
+    if (selected.length > MAX_VISIBLE_STORES) {
+      selected = selected.slice(0, MAX_VISIBLE_STORES);
+    }
+    setFilteredStoresDebounced(new Set(selected));
+  };
+
+  // Color palette for lines
+  const COLORS = [
+    '#1976d2', // blue
+    '#d32f2f', // red
+    '#388e3c', // green
+    '#fbc02d', // yellow
+    '#7b1fa2', // purple
+    '#0288d1', // light blue
+    '#c2185b', // pink
+    '#ffa000', // orange
+    '#455a64', // gray
+    '#8bc34a', // lime
+    '#f57c00', // deep orange
+    '#0097a7', // teal
+    '#5d4037', // brown
+    '#cddc39', // chartreuse
+    '#e91e63', // magenta
+    '#00bcd4', // cyan
+  ];
+
+  // Assign a color to each store (stable order)
+  const storeColorMap = useMemo(() => {
+    const map: Record<string, string> = {};
+    storeNames.forEach((store, idx) => {
+      map[store] = COLORS[idx % COLORS.length];
+    });
+    return map;
+  }, [storeNames]);
 
   return (
-    <ResponsiveContainer width="100%" height={400}>
-      <LineChart
-        data={chartData}
-        margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
-      >
-        {[...stores].map((store) => (
-          <Line
-            key={store}
-            type="stepAfter"
-            dataKey={store}
-            stroke="#8884d8"
-            connectNulls
-          />
-        ))}
-        <XAxis dataKey="date" />
-        <YAxis />
-        <Tooltip />
-        <Legend layout="horizontal" verticalAlign="bottom" align="center" />
-      </LineChart>
-    </ResponsiveContainer>
+    <div className="w-full h-full">
+      <ResponsiveContainer width="100%" height={400}>
+        <LineChart
+          data={chartData}
+          margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+        >
+          {visibleStores.map((store) => (
+            <Line
+              key={store}
+              type="stepAfter"
+              dataKey={store}
+              stroke={storeColorMap[store]}
+              connectNulls
+            />
+          ))}
+          <XAxis dataKey="date" />
+          <YAxis />
+          <Tooltip />
+          <Legend layout="horizontal" verticalAlign="bottom" align="center" />
+        </LineChart>
+      </ResponsiveContainer>
+      <div className="mt-4 flex flex-col gap-4">
+        <Card elevation={2} sx={{ backgroundColor: 'white', borderRadius: 2, maxWidth: 750 }}>
+          <CardContent>
+            <div style={{ display: 'flex', gap: 24, alignItems: 'flex-start', flexWrap: 'wrap' }}>
+              <FormControl sx={{ minWidth: 180, backgroundColor: 'white', borderRadius: 1 }} size="small">
+                <InputLabel id="date-range-select-label">Date Range</InputLabel>
+                <Select
+                  labelId="date-range-select-label"
+                  id="date-range-select"
+                  value={dateRange}
+                  label="Date Range"
+                  onChange={e => setDateRange(e.target.value)}
+                  sx={{ backgroundColor: 'white', borderRadius: 1 }}
+                  MenuProps={{
+                    PaperProps: {
+                      style: {
+                        backgroundColor: 'white',
+                      },
+                    },
+                  }}
+                >
+                  {dateOptions.map(option => (
+                    <MenuItem key={option.value} value={option.value}>
+                      {option.label}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+              <FormControl sx={{ width: 500, height: 80, backgroundColor: 'white', borderRadius: 1 }}>
+                <InputLabel id="store-multi-select-label">Stores</InputLabel>
+                <Select
+                  labelId="store-multi-select-label"
+                  id="store-multi-select"
+                  multiple
+                  value={Array.from(filteredStores)}
+                  onChange={handleStoreSelectChange}
+                  input={<OutlinedInput label="Stores" />}
+                  renderValue={(selected) => selected.join(', ')}
+                  sx={{ backgroundColor: 'white', borderRadius: 1 }}
+                  MenuProps={{
+                    PaperProps: {
+                      style: {
+                        maxHeight: 300,
+                        minHeight: 120,
+                        width: 500,
+                        backgroundColor: 'white',
+                      },
+                    },
+                  }}
+                >
+                  {storeNames.map((name) => (
+                    <MenuItem key={name} value={name} disabled={
+                      !filteredStores.has(name) && checkedCount >= MAX_VISIBLE_STORES
+                    }>
+                      <Checkbox checked={filteredStores.has(name)} size="small" sx={{ color: storeColorMap[name] }} />
+                      <ListItemText primary={name} />
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            </div>
+            {checkedCount >= MAX_VISIBLE_STORES && (
+              <div className="text-xs text-gray-500 mt-2">Limit: {MAX_VISIBLE_STORES} stores at once</div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+    </div>
   )
 }
 

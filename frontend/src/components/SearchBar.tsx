@@ -1,4 +1,5 @@
-import { Input } from '@headlessui/react'
+
+import TextField from '@mui/material/TextField'
 
 interface SearchBarProps {
   input: string
@@ -17,17 +18,19 @@ const SearchBar: React.FC<SearchBarProps> = ({
 
   return (
     <div className="search-bar relative">
-      <Input
+      <TextField
         type="text"
         value={input}
         onChange={handleInputChange}
         placeholder="Search for a game..."
-        className="w-full rounded-md border border-gray-300 p-2"
-        onKeyDown={(e) => {
+        fullWidth
+        size="small"
+        onKeyDown={(e: React.KeyboardEvent<HTMLInputElement>) => {
           if (e.key === 'Enter') {
             handleEnter(e)
           }
         }}
+        sx={{ backgroundColor: 'white', borderRadius: 1 }}
       />
     </div>
   )
