@@ -2,20 +2,24 @@ import GameCard from '../components/GameCard'
 import { useContext } from 'react'
 import { AppContext } from '../AppContext'
 import { useNavigate } from 'react-router-dom'
-import { getGamePrices } from '../services/api'
+import { getGameHistory, getGamePrices } from '../services/api'
 
 const GameListPage = () => {
   const navigate = useNavigate()
 
-  const { gamesList } = useContext(AppContext)
+  const { gamesList, setPricesList, setHistoryList } = useContext(AppContext)
 
-  const handleGameClick = (id: string) => {
-    console.log('Game clicked:', id)
-    const response = getGamePrices(id)
-    if (response !== null) {
+  const handleGameClick = async (id: string) => {
+    console.log('Handling game clicked:', id)
+    const priceResponse = await getGamePrices(id)
+    setPricesList(priceResponse)
+    const historyResponse = await getGameHistory(id)
+    setHistoryList(historyResponse)
+
+    if (priceResponse !== null && historyResponse !== null) {
       navigate('/game/' + id)
     }
-    console.warn('Game Details Response:', response)
+    console.warn('Game Details Response:', priceResponse)
   }
 
   return (

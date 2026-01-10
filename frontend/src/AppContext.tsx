@@ -1,5 +1,9 @@
 import { useState, createContext, useEffect } from 'react'
-import type { GameSearchResult } from './types/api'
+import type {
+  GameHistoryList,
+  GameSearchResult,
+  GamePricesList,
+} from './types/api'
 
 enum State {
   SEARCH,
@@ -16,8 +20,10 @@ interface AppContextType {
   setGamesList: (gamesList: GameSearchResult | null) => void
   gameId: string | null
   setGameId: (id: string | null) => void
-  details: any
-  setDetails: (details: any) => void
+  historyList: GameHistoryList | null
+  setHistoryList: (historyList: GameHistoryList | null) => void
+  pricesList: GamePricesList | null
+  setPricesList: (pricesList: GamePricesList | null) => void
 }
 
 const AppContext = createContext<AppContextType>({
@@ -29,8 +35,10 @@ const AppContext = createContext<AppContextType>({
   setGamesList: () => {},
   gameId: null,
   setGameId: () => {},
-  details: null,
-  setDetails: () => {},
+  historyList: null,
+  setHistoryList: () => {},
+  pricesList: null,
+  setPricesList: () => {},
 })
 
 const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({
@@ -40,7 +48,8 @@ const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({
   const [query, setQuery] = useState<string>('')
   const [gamesList, setGamesList] = useState<GameSearchResult | null>(null)
   const [gameId, setGameId] = useState<string | null>(null)
-  const [details, setDetails] = useState<any>(null)
+  const [historyList, setHistoryList] = useState<GameHistoryList | null>(null)
+  const [pricesList, setPricesList] = useState<GamePricesList | null>(null)
 
   useEffect(() => {
     console.log('App state changed to:', State[appState])
@@ -65,8 +74,10 @@ const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({
         setGamesList,
         gameId,
         setGameId,
-        details,
-        setDetails,
+        historyList,
+        setHistoryList,
+        pricesList,
+        setPricesList,
       }}
     >
       {children}
