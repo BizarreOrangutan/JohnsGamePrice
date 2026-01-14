@@ -22,7 +22,7 @@ const Notification: React.FC<NotificationProps> = ({
 			open={open}
 			autoHideDuration={autoHideDuration}
 			onClose={onClose}
-			anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+			anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
 		>
 			<Alert onClose={onClose} severity={severity} sx={{ width: '100%' }}>
 				{message}

@@ -5,12 +5,14 @@ import HistoryLowCard from '../components/HistoryLowCard'
 import CurrentPricesTableCard from '../components/CurrentPricesTableCard'
 import PriceHistoryChart from '../components/PriceHistoryChart'
 import { Grid } from '@mui/material'
+import { useNotification } from '../app-wrappers/NotificationProvider'
 
 // TODO: ViewStat management and charts for prices and history
 
 const GameDetailPage = () => {
   const { pricesList, historyList, setPricesList, setHistoryList } =
     useContext(AppContext)
+  const { showNotification } = useNotification()
   const params = useParams()
   const location = useLocation()
 
@@ -28,10 +30,13 @@ const GameDetailPage = () => {
     ) {
       if (urlGameId) {
         // Import fetchers directly to avoid circular deps
+        showNotification('Fetching game data...', 'info')
         import('../services/api').then(({ getGamePrices, getGameHistory }) => {
           getGamePrices(urlGameId).then(setPricesList)
           getGameHistory(urlGameId).then(setHistoryList)
         })
+      } else {
+        showNotification('No game ID provided in URL.', 'error')
       }
     }
   }, [pricesList, historyList, urlGameId, setPricesList, setHistoryList])

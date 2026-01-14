@@ -5,26 +5,33 @@ import { useNavigate, useLocation } from 'react-router-dom'
 import { getGameHistory, getGamePrices, searchGame } from '../services/api'
 import { Grid, Typography } from '@mui/material'
 import type { GameSearchResultItem } from '../types/api'
+import { useNotification } from '../app-wrappers/NotificationProvider'
 
 const GameListPage = () => {
   const navigate = useNavigate()
   const location = useLocation()
+  const { showNotification } = useNotification()
   const { gamesList, setGamesList, setPricesList, setHistoryList } =
     useContext(AppContext)
+
   // On mount, if gamesList is null and query param exists, call searchGame
   useEffect(() => {
     if (!gamesList) {
       const params = new URLSearchParams(location.search)
       const query = params.get('query')
       if (query) {
+        showNotification('Searching for games...', 'info')
         searchGame(query).then((result) => {
           if (result) setGamesList(result)
         })
+      } else {
+        showNotification('No search query provided.', 'warning')
       }
     }
   }, [gamesList, location.search, setGamesList])
 
   const handleGameClick = async (id: string) => {
+    showNotification('Fetching game details...', 'info')
     console.log('Handling game clicked:', id)
     const priceResponse = await getGamePrices(id)
     setPricesList(priceResponse)
@@ -35,10 +42,12 @@ const GameListPage = () => {
     const params = new URLSearchParams({ game_id: id }).toString()
     if (priceResponse !== null && historyResponse !== null) {
       navigate(`/game/${id}?${params}`)
+    } else {
+      showNotification('Failed to fetch game details.', 'error')
+      console.warn('Game Details Response:', priceResponse)
     }
-    console.warn('Game Details Response:', priceResponse)
   }
-  
+
   const params = new URLSearchParams(location.search)
   const searchQuery = params.get('query') || ''
 
