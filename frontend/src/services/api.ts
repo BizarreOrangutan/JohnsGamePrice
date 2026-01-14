@@ -5,6 +5,7 @@ import type {
 } from '../types/api'
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
+console.log('Using API URL:', API_URL)
 
 // Get request to search for a game by title
 export async function searchGame(
