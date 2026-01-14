@@ -12,7 +12,7 @@ ENV PATH="/home/appuser/.local/bin:${PATH}"
 COPY --chown=appuser:appuser . .
 
 # Development image
-FROM base as development
+FROM base AS development
 
 WORKDIR /app
 ENV PYTHONPATH=/app/src
@@ -24,7 +24,7 @@ EXPOSE 8000
 CMD ["poetry", "run", "uvicorn", "jpg_backend.main:app", "--host", "0.0.0.0", "--port", "8000"]
 
 # Test image
-FROM base as test
+FROM base AS test
 
 WORKDIR /app
 
@@ -35,7 +35,7 @@ RUN poetry install --no-root --with dev
 CMD ["poetry", "run", "pytest", "tests/"]
 
 # Production image
-FROM base as production
+FROM base AS production
 
 WORKDIR /app
 

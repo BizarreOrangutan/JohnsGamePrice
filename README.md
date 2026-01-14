@@ -1,4 +1,12 @@
+
 # JohnsGamePrice
+
+## 🌐 Live Deployments
+
+- **Frontend:** [https://johnsgameprice.onrender.com](https://johnsgameprice.onrender.com)
+- **Backend:** [https://johnsgameprice-1.onrender.com](https://johnsgameprice-1.onrender.com)
+
+> ⚠️ **Note:** These services are hosted on Render's free tier. Instances may spin down when idle, causing the first request to take up to 50 seconds or more to respond. Please be patient if you experience a delay on your first visit!
 
 A modern game price comparison platform with a simple two-service architecture.
 

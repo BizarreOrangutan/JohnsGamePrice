@@ -1,4 +1,4 @@
-FROM oven/bun:latest as build
+FROM oven/bun:latest AS build
 
 WORKDIR /app
 
@@ -11,7 +11,7 @@ COPY . ./
 RUN bun run build 
 
 
-FROM oven/bun:latest as development
+FROM oven/bun:latest AS development
 
 WORKDIR /app
 
@@ -26,7 +26,7 @@ EXPOSE 3000
 CMD ["bun", "run", "start"]
 
 
-FROM nginx:alpine as production
+FROM nginx:alpine AS production
 
 WORKDIR /app
 
