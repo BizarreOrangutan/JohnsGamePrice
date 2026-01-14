@@ -1,4 +1,4 @@
-import { AppContext } from '../AppContext'
+import { AppContext } from '../app-wrappers/AppContext'
 import { useContext, useEffect } from 'react'
 import { useParams, useLocation } from 'react-router-dom'
 import HistoryLowCard from '../components/HistoryLowCard'

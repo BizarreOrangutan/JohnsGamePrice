@@ -1,5 +1,5 @@
 import { Card, CardContent, Typography } from '@mui/material'
-import { AppContext } from '../AppContext'
+import { AppContext } from '../app-wrappers/AppContext'
 import { useContext } from 'react'
 
 const HistoryLowCard = () => {

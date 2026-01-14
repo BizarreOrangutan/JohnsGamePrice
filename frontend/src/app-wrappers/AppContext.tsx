@@ -3,7 +3,7 @@ import type {
   GameHistoryList,
   GameSearchResult,
   GamePricesList,
-} from './types/api'
+} from '../types/api'
 
 enum State {
   SEARCH,

@@ -4,19 +4,20 @@ interface SearchBarProps {
   input: string
   setInput: React.Dispatch<React.SetStateAction<string>>
   handleEnter: (e: React.KeyboardEvent<HTMLInputElement>) => void
+  sx?: object
 }
 
 const SearchBar: React.FC<SearchBarProps> = ({
   input,
   setInput,
   handleEnter,
+  sx
 }) => {
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setInput(e.target.value)
   }
 
   return (
-    <div className="search-bar relative">
       <TextField
         type="text"
         value={input}
@@ -29,9 +30,8 @@ const SearchBar: React.FC<SearchBarProps> = ({
             handleEnter(e)
           }
         }}
-        sx={{ backgroundColor: 'white', borderRadius: 1 }}
+        sx={{ ...sx, backgroundColor: 'white', borderRadius: 1 }}
       />
-    </div>
   )
 }
 
