@@ -19,6 +19,9 @@ import Select from '@mui/material/Select'
 import type { SelectChangeEvent } from '@mui/material/Select'
 import OutlinedInput from '@mui/material/OutlinedInput'
 import { AppContext } from '../AppContext'
+import Box from '@mui/material/Box'
+import Stack from '@mui/material/Stack'
+import Alert from '@mui/material/Alert'
 
 const dateOptions = [
   { label: 'All Time', value: 'all' },
@@ -26,14 +29,22 @@ const dateOptions = [
   { label: 'Past 3 Months', value: '3months' },
 ]
 
-function useDebouncedSet(setter: (val: Set<string>) => void, delay: number = 100) {
+function useDebouncedSet(
+  setter: (val: Set<string>) => void,
+  delay: number = 100
+) {
   const timeout = useRef<number | null>(null)
   const setDebounced = (val: Set<string>) => {
     if (timeout.current) clearTimeout(timeout.current)
     timeout.current = setTimeout(() => setter(new Set(val)), delay)
   }
   // Cleanup on unmount
-  useEffect(() => () => { if (timeout.current) clearTimeout(timeout.current) }, [])
+  useEffect(
+    () => () => {
+      if (timeout.current) clearTimeout(timeout.current)
+    },
+    []
+  )
   return setDebounced
 }
 
@@ -73,12 +84,12 @@ const PriceHistoryChart = () => {
           !prevArr.every((s) => stores.has(s))
         ) {
           // Select only the first MAX_VISIBLE_STORES
-          return new Set(storesArr.slice(0, MAX_VISIBLE_STORES));
+          return new Set(storesArr.slice(0, MAX_VISIBLE_STORES))
         }
-        return prev;
-      });
+        return prev
+      })
     }
-  }, [stores]);
+  }, [stores])
 
   // Memoize chart data calculation
   const chartData = useMemo(() => {
@@ -118,9 +129,17 @@ const PriceHistoryChart = () => {
         const now = new Date()
         let cutoff: Date
         if (dateRange === 'year') {
-          cutoff = new Date(now.getFullYear() - 1, now.getMonth(), now.getDate())
+          cutoff = new Date(
+            now.getFullYear() - 1,
+            now.getMonth(),
+            now.getDate()
+          )
         } else if (dateRange === '3months') {
-          cutoff = new Date(now.getFullYear(), now.getMonth() - 3, now.getDate())
+          cutoff = new Date(
+            now.getFullYear(),
+            now.getMonth() - 3,
+            now.getDate()
+          )
         } else {
           cutoff = new Date(0)
         }
@@ -164,26 +183,28 @@ const PriceHistoryChart = () => {
   }, [historyList, pricesList, dateRange, stores])
 
   // Limit: max 3 checked stores
-  const MAX_VISIBLE_STORES = 3;
-  const storeNames = useMemo(() => [...stores], [stores]);
+  const MAX_VISIBLE_STORES = 3
+  const storeNames = useMemo(() => [...stores], [stores])
   const visibleStores = useMemo(
-    () => storeNames.filter(store => filteredStores.has(store)),
+    () => storeNames.filter((store) => filteredStores.has(store)),
     [storeNames, filteredStores]
-  );
-  const checkedCount = visibleStores.length;
+  )
+  const checkedCount = visibleStores.length
 
   // MUI Select change handler
-  const handleStoreSelectChange = (event: SelectChangeEvent<typeof storeNames>) => {
+  const handleStoreSelectChange = (
+    event: SelectChangeEvent<typeof storeNames>
+  ) => {
     const {
       target: { value },
-    } = event;
-    let selected = typeof value === 'string' ? value.split(',') : value;
+    } = event
+    let selected = typeof value === 'string' ? value.split(',') : value
     // Enforce max selection
     if (selected.length > MAX_VISIBLE_STORES) {
-      selected = selected.slice(0, MAX_VISIBLE_STORES);
+      selected = selected.slice(0, MAX_VISIBLE_STORES)
     }
-    setFilteredStoresDebounced(new Set(selected));
-  };
+    setFilteredStoresDebounced(new Set(selected))
+  }
 
   // Color palette for lines
   const COLORS = [
@@ -203,107 +224,134 @@ const PriceHistoryChart = () => {
     '#cddc39', // chartreuse
     '#e91e63', // magenta
     '#00bcd4', // cyan
-  ];
+  ]
 
   // Assign a color to each store (stable order)
   const storeColorMap = useMemo(() => {
-    const map: Record<string, string> = {};
+    const map: Record<string, string> = {}
     storeNames.forEach((store, idx) => {
-      map[store] = COLORS[idx % COLORS.length];
-    });
-    return map;
-  }, [storeNames]);
+      map[store] = COLORS[idx % COLORS.length]
+    })
+    return map
+  }, [storeNames])
+
+  // If no history data, don't render
+  if (historyList == null) {
+    console.warn('No history data available for PriceHistoryChart.')
+    return null
+  }
 
   return (
-    <div className="w-full h-full">
-      <ResponsiveContainer width="100%" height={400}>
-        <LineChart
-          data={chartData}
-          margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
-        >
-          {visibleStores.map((store) => (
-            <Line
-              key={store}
-              type="stepAfter"
-              dataKey={store}
-              stroke={storeColorMap[store]}
-              connectNulls
-            />
-          ))}
-          <XAxis dataKey="date" />
-          <YAxis />
-          <Tooltip />
-          <Legend layout="horizontal" verticalAlign="bottom" align="center" />
-        </LineChart>
-      </ResponsiveContainer>
-      <div className="mt-4 flex flex-col gap-4">
-        <Card elevation={2} sx={{ backgroundColor: 'white', borderRadius: 2, maxWidth: 750 }}>
-          <CardContent>
-            <div style={{ display: 'flex', gap: 24, alignItems: 'flex-start', flexWrap: 'wrap' }}>
-              <FormControl sx={{ minWidth: 180, backgroundColor: 'white', borderRadius: 1 }} size="small">
-                <InputLabel id="date-range-select-label">Date Range</InputLabel>
-                <Select
-                  labelId="date-range-select-label"
-                  id="date-range-select"
-                  value={dateRange}
-                  label="Date Range"
-                  onChange={e => setDateRange(e.target.value)}
-                  sx={{ backgroundColor: 'white', borderRadius: 1 }}
-                  MenuProps={{
-                    PaperProps: {
-                      style: {
-                        backgroundColor: 'white',
-                      },
-                    },
-                  }}
+    <Card sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+      <CardContent>
+        <Box sx={{ height: 400 }}>
+          <ResponsiveContainer width="100%" height="100%">
+            <LineChart
+              data={chartData}
+              height={400}
+              margin={{ top: 20, right: 50, left: 20, bottom: 5 }}
+            >
+              {visibleStores.map((store) => (
+                <Line
+                  key={store}
+                  type="stepAfter"
+                  dataKey={store}
+                  stroke={storeColorMap[store]}
+                  connectNulls
+                />
+              ))}
+              <XAxis dataKey="date" />
+              <YAxis />
+              <Tooltip />
+              <Legend
+                layout="horizontal"
+                verticalAlign="bottom"
+                align="center"
+              />
+            </LineChart>
+          </ResponsiveContainer>
+        </Box>
+
+        <Stack direction="row" spacing={2} alignItems="center" marginTop={2}>
+          {/* Date Range Selectors */}
+          <FormControl
+            sx={{ minWidth: 180, backgroundColor: 'white', borderRadius: 1 }}
+            size="small"
+          >
+            <InputLabel id="date-range-select-label">Date Range</InputLabel>
+            <Select
+              labelId="date-range-select-label"
+              id="date-range-select"
+              value={dateRange}
+              label="Date Range"
+              onChange={(e) => setDateRange(e.target.value)}
+              sx={{ backgroundColor: 'white', borderRadius: 1 }}
+              MenuProps={{
+                PaperProps: {
+                  style: {
+                    backgroundColor: 'white',
+                  },
+                },
+              }}
+            >
+              {dateOptions.map((option) => (
+                <MenuItem key={option.value} value={option.value}>
+                  {option.label}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+
+          {/* Store Multi-Select */}
+          <FormControl
+            sx={{ width: '100%', backgroundColor: 'white', borderRadius: 1 }}
+          >
+            <InputLabel id="store-multi-select-label">Stores</InputLabel>
+            <Select
+              labelId="store-multi-select-label"
+              id="store-multi-select"
+              multiple
+              value={Array.from(filteredStores)}
+              onChange={handleStoreSelectChange}
+              input={<OutlinedInput label="Stores" />}
+              renderValue={(selected) => selected.join(', ')}
+              sx={{ backgroundColor: 'white', borderRadius: 1 }}
+              MenuProps={{
+                PaperProps: {
+                  style: {
+                    maxHeight: 300,
+                    minHeight: 120,
+                    width: 500,
+                    backgroundColor: 'white',
+                  },
+                },
+              }}
+            >
+              {storeNames.map((name) => (
+                <MenuItem
+                  key={name}
+                  value={name}
+                  disabled={
+                    !filteredStores.has(name) &&
+                    checkedCount >= MAX_VISIBLE_STORES
+                  }
                 >
-                  {dateOptions.map(option => (
-                    <MenuItem key={option.value} value={option.value}>
-                      {option.label}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-              <FormControl sx={{ width: 500, height: 80, backgroundColor: 'white', borderRadius: 1 }}>
-                <InputLabel id="store-multi-select-label">Stores</InputLabel>
-                <Select
-                  labelId="store-multi-select-label"
-                  id="store-multi-select"
-                  multiple
-                  value={Array.from(filteredStores)}
-                  onChange={handleStoreSelectChange}
-                  input={<OutlinedInput label="Stores" />}
-                  renderValue={(selected) => selected.join(', ')}
-                  sx={{ backgroundColor: 'white', borderRadius: 1 }}
-                  MenuProps={{
-                    PaperProps: {
-                      style: {
-                        maxHeight: 300,
-                        minHeight: 120,
-                        width: 500,
-                        backgroundColor: 'white',
-                      },
-                    },
-                  }}
-                >
-                  {storeNames.map((name) => (
-                    <MenuItem key={name} value={name} disabled={
-                      !filteredStores.has(name) && checkedCount >= MAX_VISIBLE_STORES
-                    }>
-                      <Checkbox checked={filteredStores.has(name)} size="small" sx={{ color: storeColorMap[name] }} />
-                      <ListItemText primary={name} />
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-            </div>
-            {checkedCount >= MAX_VISIBLE_STORES && (
-              <div className="text-xs text-gray-500 mt-2">Limit: {MAX_VISIBLE_STORES} stores at once</div>
-            )}
-          </CardContent>
-        </Card>
-      </div>
-    </div>
+                  <Checkbox
+                    checked={filteredStores.has(name)}
+                    size="small"
+                    sx={{ color: storeColorMap[name] }}
+                  />
+                  <ListItemText primary={name} />
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+          <Alert severity="info">
+            Maximum of {MAX_VISIBLE_STORES} stores can be selected at once.
+          </Alert>
+        </Stack>
+      </CardContent>
+    </Card>
   )
 }
 

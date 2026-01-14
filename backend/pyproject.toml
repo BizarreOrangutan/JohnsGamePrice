@@ -7,7 +7,7 @@ name = "jpg_backend"
 version = "0.1.0"
 description = "Backend for JohnsGamePrice"
 authors = [
-    { name = "Jamie Hunt", email = "jamie.hunt@gmail.com" }
+    { name = "Jamie Hunt", email = "jamhun04@gmail.com" }
 ]
 dependencies = [
     "requests",
