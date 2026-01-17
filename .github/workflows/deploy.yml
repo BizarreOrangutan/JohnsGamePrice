@@ -1,0 +1,20 @@
+name: Deploy on Release
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  deploy-backend:
+    if: startsWith(github.event.release.tag_name, 'backend-')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger Render Backend Deploy
+        run: curl -X POST ${{ secrets.RENDER_BACKEND_DEPLOY_HOOK }}
+
+  deploy-frontend:
+    if: startsWith(github.event.release.tag_name, 'frontend-')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger Render Frontend Deploy
+        run: curl -X POST ${{ secrets.RENDER_FRONTEND_DEPLOY_HOOK }}

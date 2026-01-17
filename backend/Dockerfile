@@ -15,6 +15,9 @@ COPY --chown=appuser:appuser . .
 FROM base AS development
 
 WORKDIR /app
+
+ARG API_KEY
+ENV API_KEY=${API_KEY}
 ENV PYTHONPATH=/app/src
 
 RUN poetry install --no-root
@@ -39,6 +42,8 @@ FROM base AS production
 
 WORKDIR /app
 
+ARG API_KEY
+ENV API_KEY=${API_KEY}
 ENV PYTHONPATH=/app/src
 
 RUN poetry install --no-root --only main

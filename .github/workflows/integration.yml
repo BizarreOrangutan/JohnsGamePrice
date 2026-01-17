@@ -1,0 +1,29 @@
+name: Continuous Integration	
+# Trigges workflow on push or pull requests to main branches
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build-and-test-backend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build test image
+        env: 
+          API_KEY: "fake_api_key"
+        run: docker build --target test -t johnsgameprice-backend-test -f backend/Dockerfile backend
+      
+      - name: Run tests
+        run: docker run -e API_KEY=fake_api_key johnsgameprice-backend-test
+  
+  build-frontend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build production image
+        env:
+          VITE_API_BASE_URL: "https://api.johnsgameprice.com"
+        run: docker build --build-arg VITE_API_URL=${{ secrets.VITE_API_BASE_URL }} --target production -t johnsgameprice-frontend -f frontend/Dockerfile frontend
