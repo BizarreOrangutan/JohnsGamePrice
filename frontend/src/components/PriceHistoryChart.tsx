@@ -9,7 +9,7 @@ import {
   YAxis,
   XAxis,
 } from 'recharts'
-import { useContext, useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import Checkbox from '@mui/material/Checkbox'
 import FormControl from '@mui/material/FormControl'
 import InputLabel from '@mui/material/InputLabel'
@@ -18,7 +18,7 @@ import ListItemText from '@mui/material/ListItemText'
 import Select from '@mui/material/Select'
 import type { SelectChangeEvent } from '@mui/material/Select'
 import OutlinedInput from '@mui/material/OutlinedInput'
-import { AppContext } from '../app-wrappers/AppContext'
+import { useGameDetailContext } from './GameDetailContext'
 import Box from '@mui/material/Box'
 import Stack from '@mui/material/Stack'
 import Alert from '@mui/material/Alert'
@@ -49,10 +49,9 @@ function useDebouncedSet(
 }
 
 const PriceHistoryChart = () => {
-  const { historyList, pricesList } = useContext(AppContext)
+  const { historyList, pricesList, currency } = useGameDetailContext()
   const [filteredStores, setFilteredStores] = useState<Set<string>>(new Set())
   const [dateRange, setDateRange] = useState(dateOptions[0].value)
-  const [currency, setCurrency] = useState("USD")
   const setFilteredStoresDebounced = useDebouncedSet(setFilteredStores, 120)
 
   // Memoize stores calculation
@@ -97,8 +96,6 @@ const PriceHistoryChart = () => {
     if (!historyList) return []
 
     try {
-      setCurrency(historyList[0]?.deal.price.currency || "USD")
-
       // Group by timestamp
       const grouped: { [date: string]: any } = {}
       historyList.forEach((point) => {
@@ -244,9 +241,22 @@ const PriceHistoryChart = () => {
     return (
       <Card sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
         <CardContent>
-          <Box sx={{ height: 400, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <Box
+            sx={{
+              height: 400,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
             <span style={{ width: '100%', textAlign: 'center' }}>
-              <span style={{ display: 'inline-block', fontSize: '1.2rem', color: '#666' }}>
+              <span
+                style={{
+                  display: 'inline-block',
+                  fontSize: '1.2rem',
+                  color: '#666',
+                }}
+              >
                 No history data available for this game.
               </span>
             </span>
@@ -275,8 +285,22 @@ const PriceHistoryChart = () => {
                   connectNulls
                 />
               ))}
-              <XAxis dataKey="date" label={{ value: 'Date', position: 'insideBottomRight', offset: -10 }} />
-              <YAxis label={{ value: `Price (${currency})`, angle: -90, position: 'insideLeft', offset: 10 }} />
+              <XAxis
+                dataKey="date"
+                label={{
+                  value: 'Date',
+                  position: 'insideBottomRight',
+                  offset: -10,
+                }}
+              />
+              <YAxis
+                label={{
+                  value: `Price (${currency})`,
+                  angle: -90,
+                  position: 'insideLeft',
+                  offset: 10,
+                }}
+              />
               <Tooltip />
               <Legend
                 layout="horizontal"

@@ -9,9 +9,14 @@ import ImageNotSupportedIcon from '@mui/icons-material/ImageNotSupported'
 interface GameCardProps {
   game: GameSearchResultItem
   onClick?: (id: string) => void
+  disabled?: boolean
 }
 
-const GameCard: React.FC<GameCardProps> = ({ game, onClick }) => {
+const GameCard: React.FC<GameCardProps> = ({
+  game,
+  onClick,
+  disabled = false,
+}) => {
   const hasImage = Boolean(game.assets.boxart)
   return (
     <Card
@@ -23,8 +28,9 @@ const GameCard: React.FC<GameCardProps> = ({ game, onClick }) => {
       }}
     >
       <CardActionArea
-        onClick={() => onClick && onClick(game.id)}
+        onClick={() => !disabled && onClick && onClick(game.id)}
         sx={{ height: '100%' }}
+        disabled={disabled}
       >
         {hasImage ? (
           <CardMedia

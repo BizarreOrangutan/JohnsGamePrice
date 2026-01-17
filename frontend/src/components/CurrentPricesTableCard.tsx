@@ -1,5 +1,4 @@
-import { useContext } from 'react'
-import { AppContext } from '../app-wrappers/AppContext'
+import { useGameDetailContext } from './GameDetailContext'
 import {
   Table,
   TableHead,
@@ -12,7 +11,7 @@ import {
 } from '@mui/material'
 
 const CurrentPricesTableCard = () => {
-  const { pricesList } = useContext(AppContext)
+  const { pricesList } = useGameDetailContext()
 
   const isoToDDMMYYYY = (isoString: string) => {
     const date = new Date(isoString)

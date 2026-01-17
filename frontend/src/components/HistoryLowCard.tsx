@@ -1,17 +1,27 @@
 import { Card, CardContent, Typography } from '@mui/material'
-import { AppContext } from '../app-wrappers/AppContext'
-import { useContext } from 'react'
+import { useGameDetailContext } from './GameDetailContext'
 
 const HistoryLowCard = () => {
-  const { pricesList } = useContext(AppContext)
+  const { pricesList } = useGameDetailContext()
   if (!pricesList || pricesList.length === 0) {
     return (
       <Card sx={{ p: 3, background: '#f5f5f5', width: '100%', height: '100%' }}>
-        <CardContent sx={{ p: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%' }}>
+        <CardContent
+          sx={{
+            p: 0,
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            height: '100%',
+          }}
+        >
           <Typography variant="h3" fontWeight={700} mb={2}>
             Historical Lows
           </Typography>
-          <Typography color="text.secondary">No price data available.</Typography>
+          <Typography color="text.secondary">
+            No price data available.
+          </Typography>
         </CardContent>
       </Card>
     )
@@ -19,11 +29,22 @@ const HistoryLowCard = () => {
   if (!pricesList[0].historyLow) {
     return (
       <Card sx={{ p: 3, background: '#f5f5f5', width: '100%', height: '100%' }}>
-        <CardContent sx={{ p: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%' }}>
+        <CardContent
+          sx={{
+            p: 0,
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            height: '100%',
+          }}
+        >
           <Typography variant="h3" fontWeight={700} mb={2}>
             Historical Lows
           </Typography>
-          <Typography color="text.secondary">No historical low data available.</Typography>
+          <Typography color="text.secondary">
+            No historical low data available.
+          </Typography>
         </CardContent>
       </Card>
     )

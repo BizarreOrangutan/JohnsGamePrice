@@ -9,10 +9,11 @@ console.log('Using API URL:', API_URL)
 
 // Get request to search for a game by title
 export async function searchGame(
-  title: string
+  title: string,
+  region?: string
 ): Promise<GameSearchResult | null> {
   const response = await fetch(
-    `${API_URL}/search-game?title=${encodeURIComponent(title)}`
+    `${API_URL}/search-game?title=${encodeURIComponent(title)}&country=${region || 'GB'}`
   )
 
   if (!response.ok) {

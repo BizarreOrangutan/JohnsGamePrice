@@ -12,6 +12,8 @@ enum State {
 }
 
 interface AppContextType {
+  region: string
+  setRegion: (region: string) => void
   appState: State
   setAppState: (state: State) => void
   query: string
@@ -27,6 +29,8 @@ interface AppContextType {
 }
 
 const AppContext = createContext<AppContextType>({
+  region: '',
+  setRegion: () => {},
   appState: State.SEARCH,
   setAppState: () => {},
   query: '',
@@ -50,6 +54,7 @@ const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({
   const [gameId, setGameId] = useState<string | null>(null)
   const [historyList, setHistoryList] = useState<GameHistoryList | null>(null)
   const [pricesList, setPricesList] = useState<GamePricesList | null>(null)
+  const [region, setRegion] = useState<string>('GB')
 
   useEffect(() => {
     console.log('App state changed to:', State[appState])
@@ -78,6 +83,8 @@ const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({
         setHistoryList,
         pricesList,
         setPricesList,
+        region,
+        setRegion,
       }}
     >
       {children}
