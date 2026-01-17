@@ -10,7 +10,7 @@ import { useNotification } from '../app-wrappers/NotificationProvider'
 const GameListPage = () => {
   const navigate = useNavigate()
   const location = useLocation()
-  const { showNotification } = useNotification()
+  const { showNotification, closeNotification } = useNotification()
   const { gamesList, setGamesList, setPricesList, setHistoryList } =
     useContext(AppContext)
 
@@ -21,30 +21,45 @@ const GameListPage = () => {
       const query = params.get('query')
       if (query) {
         showNotification('Searching for games...', 'info')
-        searchGame(query).then((result) => {
-          if (result) setGamesList(result)
-        })
+        searchGame(query)
+          .then((result) => {
+            if (result) setGamesList(result)
+          })
+          .catch((error) => {
+            showNotification('An error occurred while searching. Please try again later.', 'error')
+            console.error('Search API error:', error)
+          })
+          .finally(() => {
+            closeNotification()
+          })
       } else {
         showNotification('No search query provided.', 'warning')
       }
     }
-  }, [gamesList, location.search, setGamesList])
+  }, [gamesList, location.search, setGamesList, showNotification])
 
-  const handleGameClick = async (id: string) => {
-    showNotification('Fetching game details...', 'info')
-    console.log('Handling game clicked:', id)
-    const priceResponse = await getGamePrices(id)
-    setPricesList(priceResponse)
-    const historyResponse = await getGameHistory(id)
-    setHistoryList(historyResponse)
+  const handleGameClick = async (id: string, title: string) => {
+    showNotification(`Fetching details for ${title}...`, 'info')
+    try {
+      console.log('Handling game clicked:', id)
+      const priceResponse = await getGamePrices(id)
+      setPricesList(priceResponse)
+      const historyResponse = await getGameHistory(id)
+      setHistoryList(historyResponse)
 
-    // Encode params for link sharing (could add more params as needed)
-    const params = new URLSearchParams({ game_id: id }).toString()
-    if (priceResponse !== null && historyResponse !== null) {
-      navigate(`/game/${id}?${params}`)
-    } else {
-      showNotification('Failed to fetch game details.', 'error')
-      console.warn('Game Details Response:', priceResponse)
+      // Encode params for link sharing (could add more params as needed)
+      const params = new URLSearchParams({ game_id: id }).toString()
+      if (priceResponse !== null && historyResponse !== null) {
+        navigate(`/game/${id}?${params}&title=${encodeURIComponent(title)}`)
+      } else {
+        showNotification('Failed to fetch game details.', 'error')
+        console.warn('Game Details Response:', priceResponse)
+      }
+    } catch (error: any) {
+      showNotification('An error occurred while fetching game details. Please try again later.', 'error')
+      console.error('Game details API error:', error)
+    } finally {
+      closeNotification()
     }
   }
 
@@ -65,7 +80,7 @@ const GameListPage = () => {
         {gamesList ? (
           gamesList.map((game: GameSearchResultItem) => (
             <Grid key={game.id} size={{ xs: 4, sm: 3, md: 2 }}>
-              <GameCard game={game} onClick={handleGameClick} />
+              <GameCard game={game} onClick={() => handleGameClick(game.id, game.title)} />
             </Grid>
           ))
         ) : (

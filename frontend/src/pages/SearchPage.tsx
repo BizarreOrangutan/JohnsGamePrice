@@ -8,19 +8,26 @@ import Stack from '@mui/material/Stack'
 import { useNotification } from '../app-wrappers/NotificationProvider'
 
 const SearchPage = () => {
-  const { showNotification } = useNotification()
+  const { showNotification, closeNotification } = useNotification()
   const navigate = useNavigate()
   const { setGamesList, query, setQuery } = useContext(AppContext)
 
   const handleSearch = async () => {
     showNotification('Searching for games...', 'info')
-    const response = await searchGame(query)
-    setGamesList(response)
-    if (response !== null) {
-      navigate('/search-game?query=' + encodeURIComponent(query))
-    } else {
-      showNotification('No games found.', 'warning')
-      console.warn('Search Results Response:', response)
+    try {
+      const response = await searchGame(query)
+      setGamesList(response)
+      if (response !== null) {
+        navigate('/search-game?query=' + encodeURIComponent(query))
+      } else {
+        showNotification('No games found.', 'warning')
+        console.warn('Search Results Response:', response)
+      }
+    } catch (error: any) {
+      showNotification('An error occurred while searching. Please try again later.', 'error')
+      console.error('Search API error:', error)
+    } finally {
+      closeNotification()
     }
   }
 

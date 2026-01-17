@@ -8,6 +8,7 @@ import {
   TableBody,
   Card,
   CardContent,
+  Typography,
 } from '@mui/material'
 
 const CurrentPricesTableCard = () => {
@@ -28,9 +29,22 @@ const CurrentPricesTableCard = () => {
     return `${day}/${month}/${year}`
   }
 
-  if (pricesList == null || pricesList[0].deals == null) {
+  if (
+    !pricesList ||
+    pricesList.length === 0 ||
+    !pricesList[0].deals ||
+    pricesList[0].deals.length === 0
+  ) {
     console.warn('No deals data available to display.')
-    return null
+    return (
+      <Card sx={{ height: '100%', width: '100%' }}>
+        <CardContent>
+          <Typography variant="body1" align="center">
+            No price data available.
+          </Typography>
+        </CardContent>
+      </Card>
+    )
   }
 
   return (

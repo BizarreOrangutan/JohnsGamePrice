@@ -52,6 +52,7 @@ const PriceHistoryChart = () => {
   const { historyList, pricesList } = useContext(AppContext)
   const [filteredStores, setFilteredStores] = useState<Set<string>>(new Set())
   const [dateRange, setDateRange] = useState(dateOptions[0].value)
+  const [currency, setCurrency] = useState("USD")
   const setFilteredStoresDebounced = useDebouncedSet(setFilteredStores, 120)
 
   // Memoize stores calculation
@@ -94,7 +95,10 @@ const PriceHistoryChart = () => {
   // Memoize chart data calculation
   const chartData = useMemo(() => {
     if (!historyList) return []
+
     try {
+      setCurrency(historyList[0]?.deal.price.currency || "USD")
+
       // Group by timestamp
       const grouped: { [date: string]: any } = {}
       historyList.forEach((point) => {
@@ -235,10 +239,21 @@ const PriceHistoryChart = () => {
     return map
   }, [storeNames])
 
-  // If no history data, don't render
   if (historyList == null) {
     console.warn('No history data available for PriceHistoryChart.')
-    return null
+    return (
+      <Card sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+        <CardContent>
+          <Box sx={{ height: 400, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <span style={{ width: '100%', textAlign: 'center' }}>
+              <span style={{ display: 'inline-block', fontSize: '1.2rem', color: '#666' }}>
+                No history data available for this game.
+              </span>
+            </span>
+          </Box>
+        </CardContent>
+      </Card>
+    )
   }
 
   return (
@@ -260,8 +275,8 @@ const PriceHistoryChart = () => {
                   connectNulls
                 />
               ))}
-              <XAxis dataKey="date" />
-              <YAxis />
+              <XAxis dataKey="date" label={{ value: 'Date', position: 'insideBottomRight', offset: -10 }} />
+              <YAxis label={{ value: `Price (${currency})`, angle: -90, position: 'insideLeft', offset: 10 }} />
               <Tooltip />
               <Legend
                 layout="horizontal"

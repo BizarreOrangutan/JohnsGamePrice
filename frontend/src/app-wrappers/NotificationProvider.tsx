@@ -9,6 +9,7 @@ interface NotificationContextType {
     severity?: NotificationProps['severity'],
     autoHideDuration?: number
   ) => void;
+  closeNotification: () => void;
 }
 
 const NotificationContext = createContext<NotificationContextType | undefined>(undefined);
@@ -39,7 +40,7 @@ export const NotificationProvider: React.FC<{ children: ReactNode }> = ({ childr
   }, []);
 
   return (
-    <NotificationContext.Provider value={{ showNotification }}>
+    <NotificationContext.Provider value={{ showNotification, closeNotification: handleClose }}>
       {children}
       <Notification
         open={open}
