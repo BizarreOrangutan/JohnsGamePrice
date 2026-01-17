@@ -1,0 +1,42 @@
+name: CI/CD Pipeline	
+# Trigges workflow on push or pull requests to main and dev branches
+on:
+  push:
+    branches: [main, dev]
+  pull_request:
+    branches: [main, dev]
+
+jobs:
+  build-and-test-backend:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Build test image
+        env: 
+          API_KEY: "fake_api_key"
+        run: docker build --target test -t johnsgameprice-backend-test -f backend/Dockerfile.backend.test backend
+      
+      - name: Run tests
+        run: docker run johnsgameprice-backend-test
+  
+  build-frontend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build production image
+        env:
+          VITE_API_BASE_URL: "https://api.johnsgameprice.com"
+        run: docker build --build-arg VITE_API_URL=${{ secrets.VITE_API_BASE_URL }} --target production -t johnsgameprice-frontend -f frontend/Dockerfile frontend
+
+  deploy-backend:
+    runs-on: ubuntu-latest
+    needs: build-and-test-backend
+    steps:
+      - name: Trigger Render Backend Deploy
+        run: curl -X POST ${{ secrets.RENDER_BACKEND_DEPLOY_HOOK }}
+  
+  deploy-frontend:
+    runs-on: ubuntu-latest
+    needs: build-frontend
+    steps:
+      - name: Trigger Render Frontend Deploy
+        run: curl -X POST ${{ secrets.RENDER_FRONTEND_DEPLOY_HOOK }}
