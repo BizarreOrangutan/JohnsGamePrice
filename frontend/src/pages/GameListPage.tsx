@@ -1,12 +1,11 @@
-import GameCard from '../components/GameCard'
-import { useContext, useMemo } from 'react'
+import { useContext, useMemo, useEffect } from 'react'
 import { AppContext } from '../app-wrappers/AppContext'
 import { useNavigate, useLocation } from 'react-router-dom'
-// ...existing code...
 import { useGameListData } from '../hooks/useGameListData'
 import { Grid, Typography } from '@mui/material'
 import type { GameSearchResultItem } from '../types/api'
 import { useNotification } from '../app-wrappers/NotificationProvider'
+import GameCard from '../components/GameCard'
 
 const GameListPage = () => {
   const navigate = useNavigate()
@@ -21,14 +20,17 @@ const GameListPage = () => {
   const { gamesList, loading, error, search, fetchGameDetails, setGamesList } =
     useGameListData(searchQuery, region)
 
-  // Show notification for errors or loading
-  if (error) {
-    showNotification(error, 'error')
-  } else if (loading) {
-    showNotification('Loading...', 'info')
-  } else {
-    closeNotification()
-  }
+  // Show notification for errors or loading (useEffect to avoid multiple triggers)
+  useEffect(() => {
+    if (error) {
+      showNotification(error, 'error')
+    } else if (loading) {
+      showNotification('Loading...', 'info')
+    } else {
+      closeNotification()
+    }
+    // Only run when loading or error changes
+  }, [loading, error, showNotification, closeNotification])
 
   const handleGameClick = async (id: string, title: string) => {
     if (loading) return
@@ -39,10 +41,15 @@ const GameListPage = () => {
     const params = new URLSearchParams({ game_id: id }).toString()
     if (!detailsError && prices && history) {
       navigate(`/game/${id}?${params}&title=${encodeURIComponent(title)}`)
+      closeNotification()
     } else {
-      showNotification(detailsError || 'Failed to fetch game details.', 'error')
+      showNotification(
+        detailsError || 'Failed to fetch game details.',
+        'error',
+        undefined
+      )
+      // Don't close error notification immediately
     }
-    closeNotification()
   }
 
   return (

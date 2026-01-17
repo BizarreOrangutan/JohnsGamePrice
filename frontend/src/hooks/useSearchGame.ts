@@ -30,10 +30,9 @@ export function useSearchGame(
         'An error occurred while searching. Please try again later.',
         'error'
       )
-      console.error('Search API error:', error)
     } finally {
       setSearching(false)
-      closeNotification()
+      // Don't close error notification immediately
     }
   }
 

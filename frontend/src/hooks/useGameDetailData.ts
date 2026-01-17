@@ -22,6 +22,9 @@ export function useGameDetailData(gameId: string | null, region: string) {
       .then(([prices, history]) => {
         setPricesList(prices)
         setHistoryList(history)
+        if (!prices || !history) {
+          setError('Failed to fetch game data')
+        }
       })
       .catch(() => setError('Failed to fetch game data'))
       .finally(() => setLoading(false))

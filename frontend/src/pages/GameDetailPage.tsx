@@ -1,5 +1,5 @@
 import { AppContext } from '../app-wrappers/AppContext'
-import { useContext, useMemo } from 'react'
+import { useContext, useMemo, useEffect } from 'react'
 import { useParams, useLocation } from 'react-router-dom'
 import HistoryLowCard from '../components/HistoryLowCard'
 import CurrentPricesTableCard from '../components/CurrentPricesTableCard'
@@ -33,10 +33,14 @@ const GameDetailPage = () => {
   }, [pricesList])
 
   // Notification handling for loading/error
-  useMemo(() => {
-    if (loading) showNotification('Fetching game data...', 'info')
-    else closeNotification()
-    if (error) showNotification(error, 'error')
+  useEffect(() => {
+    if (loading) {
+      showNotification('Fetching game data...', 'info')
+    } else if (error) {
+      showNotification(error, 'error')
+    } else {
+      closeNotification()
+    }
   }, [loading, error, showNotification, closeNotification])
 
   return (

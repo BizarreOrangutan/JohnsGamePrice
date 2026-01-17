@@ -16,7 +16,7 @@ const Notification: React.FC<NotificationProps> = ({
   onClose,
   message,
   severity = 'info',
-  autoHideDuration = 4000,
+  autoHideDuration,
   onError,
 }) => {
   React.useEffect(() => {
@@ -25,13 +25,17 @@ const Notification: React.FC<NotificationProps> = ({
     }
   }, [open, severity, onError])
 
+  // Only pass autoHideDuration if defined, otherwise Snackbar will not auto-close
+  const snackbarProps: any = {
+    open,
+    onClose,
+    anchorOrigin: { vertical: 'top', horizontal: 'right' },
+  }
+  if (autoHideDuration !== undefined) {
+    snackbarProps.autoHideDuration = autoHideDuration
+  }
   return (
-    <Snackbar
-      open={open}
-      autoHideDuration={autoHideDuration}
-      onClose={onClose}
-      anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
-    >
+    <Snackbar {...snackbarProps}>
       <Alert onClose={onClose} severity={severity} sx={{ width: '100%' }}>
         {message}
       </Alert>

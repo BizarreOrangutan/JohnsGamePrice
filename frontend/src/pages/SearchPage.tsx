@@ -1,6 +1,6 @@
 import SearchBar from '../components/SearchBar'
 import { useContext } from 'react'
-import { AppContext, State } from '../app-wrappers/AppContext'
+import { AppContext } from '../app-wrappers/AppContext'
 import { useSearchGame } from '../hooks/useSearchGame'
 
 import Stack from '@mui/material/Stack'
