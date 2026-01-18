@@ -2,21 +2,22 @@ name: CI/CD Pipeline
 # Trigges workflow on push or pull requests to main and dev branches
 on:
   push:
-    branches: [main, dev]
+    branches: [main, dev, ci-fix]
   pull_request:
-    branches: [main, dev]
+    branches: [main, dev , ci-fix]
 
 jobs:
   build-and-test-backend:
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v4
       - name: Build test image
         env: 
           API_KEY: "fake_api_key"
-        run: docker build --target test -t johnsgameprice-backend-test -f backend/Dockerfile.backend.test backend
+        run: docker build --target test -t johnsgameprice-backend-test -f backend/Dockerfile backend
       
       - name: Run tests
-        run: docker run johnsgameprice-backend-test
+        run: docker run -e API_KEY=fake_api_key johnsgameprice-backend-test
   
   build-frontend:
     runs-on: ubuntu-latest
