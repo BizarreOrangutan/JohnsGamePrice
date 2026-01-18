@@ -7,7 +7,7 @@ export function useSearchGame(
   query: string,
   setGamesList: (games: any) => void
 ) {
-  const { showNotification, closeNotification } = useNotification()
+  const { showNotification } = useNotification()
   const navigate = useNavigate()
   const [searching, setSearching] = useState(false)
 

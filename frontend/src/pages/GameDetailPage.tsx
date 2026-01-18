@@ -18,7 +18,7 @@ const GameDetailPage = () => {
     params.id || new URLSearchParams(location.search).get('game_id')
   const gameTitle =
     new URLSearchParams(location.search).get('title') || 'No title found'
-  const { pricesList, historyList, loading, error, refetch } =
+  const { pricesList, historyList, loading, error } =
     useGameDetailData(urlGameId, region)
   const currency = useMemo(() => {
     if (
