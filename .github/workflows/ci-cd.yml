@@ -17,7 +17,7 @@ jobs:
         run: docker build --target test -t johnsgameprice-backend-test -f backend/Dockerfile backend
       
       - name: Run tests
-        run: docker run johnsgameprice-backend-test
+        run: docker run -e API_KEY=fake_api_key johnsgameprice-backend-test
   
   build-frontend:
     runs-on: ubuntu-latest
