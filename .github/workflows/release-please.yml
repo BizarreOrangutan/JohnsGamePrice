@@ -1,0 +1,22 @@
+name: Release Please
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  release-please:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: google-github-actions/release-please-action@v4
+        with:
+          release-type: monorepo
+          packages: |
+            frontend:
+              release-type: node
+              package-name: johnsgameprice-frontend
+              path: frontend
+            backend:
+              release-type: python
+              package-name: johnsgameprice-backend
+              path: backend
