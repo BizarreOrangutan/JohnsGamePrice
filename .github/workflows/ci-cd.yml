@@ -2,9 +2,9 @@ name: CI/CD Pipeline
 # Trigges workflow on push or pull requests to main and dev branches
 on:
   push:
-    branches: [main, dev]
+    branches: [main, dev, ci-fix]
   pull_request:
-    branches: [main, dev]
+    branches: [main, dev , ci-fix]
 
 jobs:
   build-and-test-backend:
