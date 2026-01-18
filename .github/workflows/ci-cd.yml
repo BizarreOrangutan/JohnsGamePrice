@@ -10,10 +10,11 @@ jobs:
   build-and-test-backend:
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v4
       - name: Build test image
         env: 
           API_KEY: "fake_api_key"
-        run: docker build --target test -t johnsgameprice-backend-test -f backend/Dockerfile.backend.test backend
+        run: docker build --target test -t johnsgameprice-backend-test -f backend/Dockerfile backend
       
       - name: Run tests
         run: docker run johnsgameprice-backend-test
