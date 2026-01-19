@@ -71,21 +71,33 @@ const CurrentPricesTableCard = () => {
           <TableBody>
             {pricesList[0].deals.map((deal, idx) => (
               <TableRow key={idx}>
-                <TableCell>{deal.shop.name}</TableCell>
+                <TableCell>{deal.shop?.name ?? 'N/A'}</TableCell>
                 <TableCell>
-                  {deal.price.amount.toFixed(2)} {deal.price.currency}
+                  {deal.price?.amount != null && deal.price?.currency
+                    ? `${deal.price.amount.toFixed(2)} ${deal.price.currency}`
+                    : 'N/A'}
                 </TableCell>
                 <TableCell>
-                  {deal.regular.amount.toFixed(2)} {deal.regular.currency}
+                  {deal.regular?.amount != null && deal.regular?.currency
+                    ? `${deal.regular.amount.toFixed(2)} ${deal.regular.currency}`
+                    : 'N/A'}
                 </TableCell>
-                <TableCell>{deal.cut}%</TableCell>
+                <TableCell>{deal.cut != null ? `${deal.cut}%` : 'N/A'}</TableCell>
                 <TableCell>
-                  {deal.platforms.map((p) => p.name).join(', ')}
+                  {deal.platforms?.length
+                    ? deal.platforms.map((p) => p.name).join(', ')
+                    : 'N/A'}
                 </TableCell>
                 <TableCell>
-                  {deal.drm.map((d) => d.name).join(', ') || 'DRM Free'}
+                  {deal.drm?.length
+                    ? deal.drm.map((d) => d.name).join(', ')
+                    : 'DRM Free'}
                 </TableCell>
-                <TableCell>{isoToDDMMYYYY(deal.timestamp)}</TableCell>
+                <TableCell>
+                  {deal.timestamp
+                    ? isoToDDMMYYYY(deal.timestamp)
+                    : 'N/A'}
+                </TableCell>
               </TableRow>
             ))}
           </TableBody>

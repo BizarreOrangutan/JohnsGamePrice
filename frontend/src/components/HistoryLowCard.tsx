@@ -50,6 +50,10 @@ const HistoryLowCard = () => {
     )
   }
 
+  const allLow = pricesList[0].historyLow?.all
+  const y1Low = pricesList[0].historyLow?.y1
+  const m3Low = pricesList[0].historyLow?.m3
+
   return (
     <Card
       sx={{
@@ -75,22 +79,25 @@ const HistoryLowCard = () => {
         <Typography sx={{ fontSize: 'clamp(1.2rem, 2vw, 2rem)' }}>
           🕰️ All Time Low:&nbsp;
           <strong>
-            {pricesList[0].historyLow.all.amount.toFixed(2)}{' '}
-            {pricesList[0].historyLow.all.currency}
+            {allLow?.amount != null && allLow?.currency
+              ? `${allLow.amount.toFixed(2)} ${allLow.currency}`
+              : 'N/A'}
           </strong>
         </Typography>
         <Typography sx={{ fontSize: 'clamp(1.2rem, 2vw, 2rem)' }}>
           📅 Last Year Low:&nbsp;
           <strong>
-            {pricesList[0].historyLow.y1.amount.toFixed(2)}{' '}
-            {pricesList[0].historyLow.y1.currency}
+            {y1Low?.amount != null && y1Low?.currency
+              ? `${y1Low.amount.toFixed(2)} ${y1Low.currency}`
+              : 'N/A'}
           </strong>
         </Typography>
         <Typography sx={{ fontSize: 'clamp(1.2rem, 2vw, 2rem)' }}>
           🗓️ Last 3 Months Low:&nbsp;
           <strong>
-            {pricesList[0].historyLow.m3.amount.toFixed(2)}{' '}
-            {pricesList[0].historyLow.m3.currency}
+            {m3Low?.amount != null && m3Low?.currency
+              ? `${m3Low.amount.toFixed(2)} ${m3Low.currency}`
+              : 'N/A'}
           </strong>
         </Typography>
       </CardContent>
