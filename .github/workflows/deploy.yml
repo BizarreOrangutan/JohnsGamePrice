@@ -6,14 +6,14 @@ on:
 
 jobs:
   deploy-backend:
-    if: startsWith(github.event.release.tag_name, 'backend-')
+    if: startsWith(github.event.release.tag_name, 'backend-v')
     runs-on: ubuntu-latest
     steps:
       - name: Trigger Render Backend Deploy
         run: curl -X POST ${{ secrets.RENDER_BACKEND_DEPLOY_HOOK }}
 
   deploy-frontend:
-    if: startsWith(github.event.release.tag_name, 'frontend-')
+    if: startsWith(github.event.release.tag_name, 'frontend-v')
     runs-on: ubuntu-latest
     steps:
       - name: Trigger Render Frontend Deploy
