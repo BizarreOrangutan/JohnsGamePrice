@@ -48,6 +48,14 @@ poetry run poe dev
 # API runs at http://localhost:8000
 ```
 
+
+## ⚙️ CI/CD & Automated Releases
+
+- **CI/CD:** Automated build and test workflows run on every pull request and push to main, ensuring code quality and reliability.
+- **Automated Releases:** Versioning, changelogs, and GitHub releases are managed by [release-please](https://github.com/googleapis/release-please). Deployments are triggered automatically on new releases.
+
+---
+
 ## 🧩 Main Workflow
 
 1. User lands on `/` and searches for a game.
