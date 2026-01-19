@@ -5,6 +5,7 @@ import GameDetailPage from './pages/GameDetailPage'
 import './App.css'
 import { Routes, Route } from 'react-router-dom'
 
+// 
 function App() {
   return (
     <>
