@@ -1,12 +1,14 @@
 {
-    "packages": {
-        "backend": {
-            "path": "backend",
-            "release-type": "python"
-        },
-        "frontend": {
-            "path": "frontend",
-            "release-type": "node"
-        }
+  "packages": {
+    "backend": {
+      "path": "backend",
+      "release-type": "python",
+      "tagFormat": "backend-v${version}"
+    },
+    "frontend": {
+      "path": "frontend",
+      "release-type": "node",
+      "tagFormat": "frontend-v${version}"
     }
+  }
 }
