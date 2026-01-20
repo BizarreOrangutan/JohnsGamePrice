@@ -38,9 +38,15 @@ jobs:
     if: ${{ needs.release-please.outputs.backend--release_created == 'true' }}
     runs-on: ubuntu-latest
     needs: release-please
+    steps:
+      - name: Trigger Backend Deploy Workflow
+        run: echo "Backend release created with tag ${{ needs.release-please.outputs.backend--tag_name }}. Triggering deployment..."
 
 
   release-frontend:
     if: ${{ needs.release-please.outputs.frontend--release_created == 'true' }}
     runs-on: ubuntu-latest
     needs: release-please
+    steps:
+      - name: Trigger Frontend Deploy Workflow
+        run: echo "Frontend release created with tag ${{ needs.release-please.outputs.frontend--tag_name }}. Triggering deployment..."
