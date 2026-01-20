@@ -27,8 +27,10 @@ jobs:
       - name: Print release outputs for debugging
         continue-on-error: true
         run: |
-          echo "Release outputs:"
-          echo "${{ toJson(steps.release.outputs) }}"
+          echo "backend--tag_name: ${{ steps.release.outputs.backend--tag_name }}"
+          echo "backend--release_created: ${{ steps.release.outputs.backend--release_created }}"
+          echo "frontend--tag_name: ${{ steps.release.outputs.frontend--tag_name }}"
+          echo "frontend--release_created: ${{ steps.release.outputs.frontend--release_created }}"
 
   release-backend:
     if: ${{ needs.release-please.outputs.backend--release_created == 'true' }}
