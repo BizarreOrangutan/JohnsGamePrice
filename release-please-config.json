@@ -1,12 +1,16 @@
 {
-    "packages": {
-        "backend": {
-            "path": "backend",
-            "release-type": "python"
-        },
-        "frontend": {
-            "path": "frontend",
-            "release-type": "node"
-        }
+  "include-component-in-tag": true,
+  "include-v-in-tag": true,
+  "tag-separator": "@",
+  "separate-pull-requests": true,
+  "packages": {
+    "backend": {
+      "path": "backend",
+      "release-type": "python"
+    },
+    "frontend": {
+      "path": "frontend",
+      "release-type": "node"
     }
+  }
 }
