@@ -39,7 +39,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Zip backend source code
-        run: zip -r backend-${{ needs.release-please.outputs.backend--tag_name }}.zip backend
+        run: cd backend && zip -r ../backend-${{ needs.release-please.outputs.backend--tag_name }}.zip .
       - name: Upload Artifact
         uses: actions/upload-artifact@v3
         with:
@@ -55,7 +55,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Zip Frontend Folder
-        run: zip -r frontend-${{ needs.release-please.outputs.frontend--tag_name }}.zip frontend
+        run: cd frontend && zip -r ../frontend-${{ needs.release-please.outputs.frontend--tag_name }}.zip .
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
