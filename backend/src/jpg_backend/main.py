@@ -41,7 +41,7 @@ def search_game(title: str, client: ITADClient = Depends(get_itad_client)):
 def get_prices(req: PriceRequest, client: ITADClient = Depends(get_itad_client)):
     game_id = req.game_id.strip()
     country = req.country.strip().upper()
-    shop_ids = req.shop_ids    
+    shop_ids = req.shop_ids
     logger.info(
         f"Fetching prices for game ID: {game_id} and country: {country} with shop ids: {shop_ids}"
     )
@@ -56,7 +56,9 @@ def get_prices(req: PriceRequest, client: ITADClient = Depends(get_itad_client))
 
 
 @app.post("/history")
-def get_price_history(req: HistoryRequest, client: ITADClient = Depends(get_itad_client)):
+def get_price_history(
+    req: HistoryRequest, client: ITADClient = Depends(get_itad_client)
+):
     game_id = req.game_id.strip()
     country = req.country.strip().upper()
     shop_ids = req.shop_ids

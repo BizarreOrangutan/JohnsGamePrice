@@ -9,7 +9,7 @@ def test_verify_date_format_valid():
         "2023-01-01T00:00:00Z",
         "2021-06-15T15:30:45-05:00",
         "2020-02-29T23:59:59+00:00",
-        "2020-02-29 23:59:59+00:00" # Should be accepted as valid ISO format even with a space instead of 'T'
+        "2020-02-29 23:59:59+00:00",  # Should be accepted as valid ISO format even with a space instead of 'T'
     ]
     for date_str in valid_dates:
         try:
@@ -18,6 +18,7 @@ def test_verify_date_format_valid():
             assert (
                 False
             ), f"verify_date_format raised an exception for valid date '{date_str}': {e}"
+
 
 def test_verify_date_format_invalid():
     invalid_dates = [

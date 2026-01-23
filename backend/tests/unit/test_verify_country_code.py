@@ -13,6 +13,7 @@ def test_verify_country_code_valid():
                 False
             ), f"verify_country_code raised an exception for valid code '{code}': {e}"
 
+
 def test_verify_country_code_invalid():
     invalid_codes = ["USA", "U", "123", "XX", "ZZ", "abc", "", " ", "U1", "G!"]
     for code in invalid_codes:
