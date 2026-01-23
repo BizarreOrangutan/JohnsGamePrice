@@ -32,6 +32,7 @@ def test_get_prices_happy_path(client):
         ]
     }
 
+
 def test_get_prices_empty_game_id(client):
     mock_client = Mock()
     app.dependency_overrides[get_itad_client] = lambda: mock_client
@@ -45,6 +46,7 @@ def test_get_prices_empty_game_id(client):
     )
     assert response.status_code == 400
     assert response.json() == {"detail": "game_id parameter cannot be empty"}
+
 
 def test_get_prices_itad_failure(client):
     # Mock the ITADClient to raise an exception

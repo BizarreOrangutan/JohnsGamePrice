@@ -12,6 +12,7 @@ api_key = os.getenv("API_KEY")
 if not api_key:
     raise ValueError("API_KEY environment variable is required")
 
+
 class ITADClient:
     def __init__(self, api_key, logger=None):
         self.api_key = api_key
@@ -83,7 +84,8 @@ class ITADClient:
 
 
 logger = get_logger()
-itad_client = ITADClient(api_key, logger);
+itad_client = ITADClient(api_key, logger)
+
 
 def get_itad_client() -> ITADClient:
     return itad_client

@@ -17,8 +17,10 @@ const GameListPage = () => {
     [location.search]
   )
   const searchQuery = useMemo(() => params.get('query') || '', [params])
-  const { gamesList, loading, error, fetchGameDetails } =
-    useGameListData(searchQuery, region)
+  const { gamesList, loading, error, fetchGameDetails } = useGameListData(
+    searchQuery,
+    region
+  )
 
   // Show notification for errors or loading (useEffect to avoid multiple triggers)
   useEffect(() => {
