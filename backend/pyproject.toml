@@ -40,6 +40,9 @@ profile = "black"
 dev = "uvicorn jpg_backend.main:app --reload"
 test = "pytest"
 cov = "pytest --cov=jpg_backend --cov-report=term-missing"
-format = "isort . && black ."
-check = "isort --check-only . && black --check ."
-
+format = ["_black", "_isort"]
+_black = "black src tests"
+_isort = "isort src tests"
+check = ["_black_check", "_isort_check"]
+_black_check = "black --check src tests"
+_isort_check = "isort --check-only src tests"
