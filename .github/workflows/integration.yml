@@ -29,4 +29,7 @@ jobs:
       - name: Build production image
         env:
           VITE_API_BASE_URL: "https://api.johnsgameprice.com"
-        run: docker build --build-arg VITE_API_URL=${{ secrets.VITE_API_BASE_URL }} --target production -t johnsgameprice-frontend -f frontend/Dockerfile frontend
+        run: docker build --build-arg VITE_API_URL=${{ secrets.VITE_API_BASE_URL }} --target build -t johnsgameprice-frontend -f frontend/Dockerfile frontend
+
+      - name: Run formatting check
+        run: docker run johnsgameprice-frontend bun run format:check
