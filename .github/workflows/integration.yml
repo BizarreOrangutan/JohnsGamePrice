@@ -2,9 +2,9 @@ name: Continuous Integration
 # Trigges workflow on push or pull requests to main branches
 on:
   push:
-    branches: [main]
+    branches: [main, dev]
   pull_request:
-    branches: [main]
+    branches: [main, dev]
 
 jobs:
   build-and-test-backend:
