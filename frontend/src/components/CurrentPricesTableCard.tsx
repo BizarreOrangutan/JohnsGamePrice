@@ -82,7 +82,9 @@ const CurrentPricesTableCard = () => {
                     ? `${deal.regular.amount.toFixed(2)} ${deal.regular.currency}`
                     : 'N/A'}
                 </TableCell>
-                <TableCell>{deal.cut != null ? `${deal.cut}%` : 'N/A'}</TableCell>
+                <TableCell>
+                  {deal.cut != null ? `${deal.cut}%` : 'N/A'}
+                </TableCell>
                 <TableCell>
                   {deal.platforms?.length
                     ? deal.platforms.map((p) => p.name).join(', ')
@@ -94,9 +96,7 @@ const CurrentPricesTableCard = () => {
                     : 'DRM Free'}
                 </TableCell>
                 <TableCell>
-                  {deal.timestamp
-                    ? isoToDDMMYYYY(deal.timestamp)
-                    : 'N/A'}
+                  {deal.timestamp ? isoToDDMMYYYY(deal.timestamp) : 'N/A'}
                 </TableCell>
               </TableRow>
             ))}
