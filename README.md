@@ -1,6 +1,16 @@
 
 # JohnsGamePrice
 
+Main Status:
+[![CodeQL Main](https://github.com/BizarreOrangutan/JohnsGamePrice/actions/workflows/codeql.yml/badge.svg?branch=main)](https://github.com/BizarreOrangutan/JohnsGamePrice/actions/workflows/codeql.yml)
+
+[![Continuous Integration Main](https://github.com/BizarreOrangutan/JohnsGamePrice/actions/workflows/integration.yml/badge.svg?branch=main)](https://github.com/BizarreOrangutan/JohnsGamePrice/actions/workflows/integration.yml)
+
+Dev Status:
+[![CodeQL Dev](https://github.com/BizarreOrangutan/JohnsGamePrice/actions/workflows/codeql.yml/badge.svg?branch=dev)](https://github.com/BizarreOrangutan/JohnsGamePrice/actions/workflows/codeql.yml)
+
+[![Continuous Integration Dev](https://github.com/BizarreOrangutan/JohnsGamePrice/actions/workflows/integration.yml/badge.svg?branch=dev)](https://github.com/BizarreOrangutan/JohnsGamePrice/actions/workflows/integration.yml)
+
 ## 🌐 Live Deployments
 
 - **Frontend:** [https://johnsgameprice.onrender.com](https://johnsgameprice.onrender.com)
