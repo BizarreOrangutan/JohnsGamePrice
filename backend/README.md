@@ -1,3 +1,7 @@
+
+**Database Schema & Migrations**
+This project uses **SQLAlchemy Core** for defining database schemas and **Alembic** for managing migrations.
+
 **Prerequisites**
 Python 3.10+
 pip
